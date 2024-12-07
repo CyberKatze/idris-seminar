@@ -72,13 +72,44 @@
 	\end{quote}%
 }
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Define Idris2 language keywords
+\lstdefinelanguage{Idris}{
+    morekeywords={
+        module, import, data, where, if, then, else, case, of, let, in, do, 
+        Type, Int, Integer, Float, Double, Char, String, Bool, True, False, 
+        List, Nil, (::), (->), (=>), Nat,(:),
+    },
+	morecomment=[l]{--},
+}
 
-\title{Seminar Template for Computer Science}
-\event{Seminar: XXX in Summer term 2019}
-\author{ Mohammadmehrdad Shahidi, Zahra Khodabakhshian 
-  \institute{Technische Universität Kaiserslautern, Department of Computer Science}}
+\lstnewenvironment{idris}{
+  \vspace{1em}%
+  \lstset{
+    language=idris,
+    columns=flexible,
+    keepspaces=true,
+    tabsize=2,
+    basicstyle={\fontfamily{tx}\ttfamily\small},
+    stringstyle=\color{green_ulises},
+    commentstyle=\color{gray_ulisses},
+    identifierstyle=\slshape{},
+    keywordstyle=\bfseries,
+    numberstyle=\small\color{gray_ulisses},
+    backgroundcolor=\color{gray!5},
+    numberblanklines=false,
+    inputencoding={utf8},
+    belowskip=-1mm,
+    escapeinside={//*}{\^^M} % Allow to set labels and the like in comments
+  }
+}{
+  \vspace{1em}
+}
 
+
+\title{Idris2}
+\event{Seminar: Programming Languages in Winter term 2024/2025}
+\author{Mehrdad Shahidi, Zahra Khodabakhishan
+  \institute{Rheinland-Pfälzische Technische Universität Kaiserslautern-Landau, Department of Computer Science}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -88,30 +119,42 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{abstract}
-    Give an abstract of your paper. You may also give a very short explanation why it could be useful for the reader, i.~e.~ a short motivation.
+Idris2 is a functional programming language that leverages Quantitative Type Theory (QTT) to offer an advanced dependent type system, making it well-suited for both practical software development and formal proof verification.
+This report provides example problem verification\todo{add problem name here} using Idris2 to showcase its capabilities, examines its QTT-based approach, compares its features with Agda, and concludes by summarizing key insights and suggesting directions for future exploration.
+
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Introduction}
 \label{sec:introduction}
+As software systems become increasingly complex and critical to our daily operations, programming languages continue to evolve to meet growing demands for reliability and correctness.
+Idris2 represents a significant advancement in this evolution by offering a unique approach to program correctness through its type system based on Quantitative Type Theory (QTT).
+As a pure functional programming language with first-class types, Idris2 allows types to be manipulated and computed just like any other value, fundamentally shifting how we approach programming.
+Unlike traditional programming languages that catch errors at runtime, Idris2 enables developers to work collaboratively with the compiler, which acts as an assistant during development, helping to prove properties about code and suggest potential solutions for incomplete programs.
+This type-driven development approach ensures program correctness before execution, making it particularly valuable for critical systems, mathematical proofs, and complex state-dependent applications like concurrent systems.\cite{BradyYoutube2023}
+example of idris2 code:
+\begin{idris}
+	safeDiv : (num : Nat) -> (d : Nat) -> {auto ok : GT d Z} -> Nat  
+	safeDiv n d  = div n d  
 
-The introduction includes the motivation for the presented work.
-In general, the author will explain the addressed problem and why it is of interest to solve that problem.
-The most important thing is to explain the papers contribution, e.~g.~ a paper may introduce a new (more efficient) algorithm or/and the proof of an (existing) algorithm or just a method to solve the addressed problem.
-A general introduction can not be given due to the diversity and variety of problems and their solutions.
-Finally, the section can be closed by giving an overview of the rest of the paper.
-E.~g.~ ``The rest of the paper is structured as follows:
-Section \ref{sec:relatedwork} gives an overview of related work and existing solutions of the addressed problem. $\ldots$''
+	-- This works automatically because Idris can prove 0 < 5  
+	example : Nat  
+	example = safeDiv 12 5
 
-\section{Related Work}
-\label{sec:relatedwork}
+	-- This code failes to compile because Idris can't prove 0 < 0
+	example2 : Nat
+	example2 = safeDiv 12 0
 
-Related work is a very important part of a paper.
-Basically, the reader has to be convinced that the author of a paper prepared himself carefully.
-Existing work has to be cited and the author has to explain advantages/disadvantages and limitations of work that is similar to the presented work.
-In particular, research is the keyword: the author is advised to use libraries or the internet to search for existing solutions of the addressed problem.
-You are advised to connect sections by short sentences, e.~g.~ ``The next section introduces the solution of the addressed problem''.
+
+\end{idris}
+
+The following sections provide an accessible overview of Idris2's key aspects.
+We begin with a brief introduction to Quantitative Type Theory (QTT) and compare Idris2 with both Haskell and Agda, highlighting how these languages approach type systems differently.
+While Haskell represents traditional functional programming and Agda focuses heavily on theorem proving, Idris2 aims to bridge the gap between practical programming and formal verification.
+We then explore some distinctive features of Idris2 through simple examples, such as its interactive development environment and dependent types.
+To demonstrate these concepts in action, we present a straightforward verification example that shows how Idris2's type system can prevent common programming errors.
+The report concludes with a discussion of current limitations and practical considerations when using Idris2 in real-world scenarios.
 
 \section{The Solution}
 \label{sec:solution}
