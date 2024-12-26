@@ -44,6 +44,7 @@
 
 % Load support for links in pdfs
 \usepackage{hyperref}
+\setlength{\footnotesep}{10pt}
 
 % Defines default styling for code listings
 \definecolor{gray_ulisses}{gray}{0.55}
@@ -51,13 +52,14 @@
 \lstset{%
   columns=flexible,
   keepspaces=true,
-  tabsize=3,
+  tabsize=2,
   basicstyle={\fontfamily{tx}\ttfamily\small},
   stringstyle=\color{green_ulises},
   commentstyle=\color{gray_ulisses},
   identifierstyle=\slshape{},
   keywordstyle=\bfseries,
   numberstyle=\small\color{gray_ulisses},
+  backgroundcolor=\color{gray!5},
   numberblanklines=false,
   inputencoding={utf8},
   belowskip=-1mm,
@@ -82,29 +84,62 @@
 	morecomment=[l]{--},
 }
 
+\lstnewenvironment{haskell}{
+  \vspace{1em}%
+  \lstset{abovecaptionskip=1em, language=Haskell}
+}{
+  \vspace{1em}
+}
+
+
 \lstnewenvironment{idris}{
   \vspace{1em}%
   \lstset{
     language=idris,
-    columns=flexible,
-    keepspaces=true,
-    tabsize=2,
-    basicstyle={\fontfamily{tx}\ttfamily\small},
-    stringstyle=\color{green_ulises},
-    commentstyle=\color{gray_ulisses},
-    identifierstyle=\slshape{},
-    keywordstyle=\bfseries,
-    numberstyle=\small\color{gray_ulisses},
-    backgroundcolor=\color{gray!5},
-    numberblanklines=false,
-    inputencoding={utf8},
-    belowskip=-1mm,
-    escapeinside={//*}{\^^M} % Allow to set labels and the like in comments
   }
 }{
   \vspace{1em}
 }
 
+% Define Agda listing style  
+\lstdefinelanguage{Agda}{  
+  keywords={  
+    data, where, let, in, module, mutual, abstract, private,  
+    public, postulate, primitive, record, field, constructor,  
+    forall, Set, Type, with, rewrite, using, open, import,  
+    instance, hiding, renaming, to  
+  },  
+  sensitive=true,  
+  morecomment=[l]--,  
+  morestring=[b]",  
+  literate=  
+    {∀}{{\ensuremath{\forall}}}1  
+    {→}{{\ensuremath{\rightarrow}}}1  
+    {←}{{\ensuremath{\leftarrow}}}1  
+    {⊤}{{\ensuremath{\top}}}1  
+    {⊥}{{\ensuremath{\bot}}}1  
+    {∷}{{\ensuremath{::}}}1  
+    {≡}{{\ensuremath{\equiv}}}1  
+    {λ}{{\ensuremath{\lambda}}}1  
+    {∘}{{\ensuremath{\circ}}}1  
+    {∨}{{\ensuremath{\vee}}}1  
+    {∧}{{\ensuremath{\wedge}}}1  
+    {⊎}{{\ensuremath{\uplus}}}1  
+    {×}{{\ensuremath{\times}}}1  
+    {ℕ}{{\ensuremath{\mathbb{N}}}}1  
+    {ℤ}{{\ensuremath{\mathbb{Z}}}}1  
+    {⊢}{{\ensuremath{\vdash}}}1  
+    {∈}{{\ensuremath{\in}}}1  
+    {∉}{{\ensuremath{\notin}}}1  
+    {∋}{{\ensuremath{\ni}}}1  
+    {∌}{{\ensuremath{\not\ni}}}1  
+}  
+
+% Define the Agda environment  
+\lstnewenvironment{agda}  
+{\lstset{  
+    language=Agda,  
+}}{}  
 
 \title{Idris2}
 \event{Seminar: Programming Languages in Winter term 2024/2025}
@@ -229,13 +264,142 @@ The integration of QTT in Idris2 provides several key advantages:
 \end{itemize}  
 
 \section{Comparing Idris2 with Haskell and Agda}  
-% Type system differences  
-% Practical programming aspects  
-% Code examples highlighting key differences  
-% Theorem proving capabilities  
-% Syntax and usability comparison  
-% Different approaches to dependent types  
+While Idris2, Haskell, and Agda are all functional programming languages with strong type systems, they each serve different purposes and offer distinct approaches to type theory and practical programming. This section examines their key differences and similarities across various aspects.  
 
+\subsection{Type System Characteristics}  
+\begin{itemize}  
+    \item \textbf{Haskell}: Features a Hindley-Milner type system\footnote{Named after Roger Hindley and Robin Milner for their foundational work on type inference \cite{hindley1969principal,milner1978theory}.} with type classes, offering strong static typing without dependent types. Type-level programming is possible through extensions but is not a core feature.  
+    
+    \item \textbf{Agda}: Implements a dependent type system based on Martin-Löf Type Theory\footnote{Martin-Löf's type theory \cite{martin1984intuitionistic} introduced dependent types and laid the foundation for modern proof assistants like Agda.}, primarily focused on theorem proving and formal verification. Its type system is more expressive than Haskell's but requires more manual proof work.  
+    
+    \item \textbf{Idris2}: Combines practical programming with dependent types through QTT, offering a middle ground between Haskell's practicality and Agda's theorem-proving capabilities. Its type system supports both runtime and compile-time type checking with explicit erasure control.  
+\end{itemize}  
+
+\subsection{Practical Programming Aspects}  
+Consider the following example implementing a safe list indexing function in all three languages:  
+
+\begin{haskell}
+-- Haskell: Runtime safety through Maybe type  
+(!?) :: [a] -> Int -> Maybe a  
+xs !? n | n < 0     = Nothing  
+        | otherwise = case drop n xs of  
+                       []     -> Nothing  
+                       (x:_)  -> Just x  
+\end{haskell}
+
+\begin{agda}
+-- Agda: Compile-time safety through dependent types  
+_!!_ : ∀ {A : Set} {n} → Vec A n → Fin n → A  
+(x ∷ xs) !! zero  = x  
+(x ∷ xs) !! suc i = xs !! i  
+\end{agda}
+
+\begin{idris}  
+-- Idris2: Practical dependent types with erasure  
+index : (i : Fin n) -> Vect n a -> a  
+index FZ     (x :: xs) = x  
+index (FS k) (x :: xs) = index k xs  
+\end{idris}  
+
+Key differences in practical usage include:  
+\begin{itemize}  
+    \item \textbf{Development Experience}:  
+        \begin{itemize}  
+            \item Haskell offers the most mature ecosystem and tooling  
+            \item Agda focuses on interactive theorem proving  
+            \item Idris2 provides interactive type-driven development with practical programming features  
+        \end{itemize}  
+    
+    \item \textbf{Performance Considerations}:  
+        \begin{itemize}  
+            \item Haskell generally offers the best runtime performance  
+            \item Agda's focus is on correctness rather than performance  
+            \item Idris2's QTT enables better performance through erasure of compile-time-only values  
+        \end{itemize}  
+\end{itemize}  
+
+\subsection{Theorem Proving Capabilities}  
+The languages differ significantly in their approach to formal verification:  
+
+\begin{itemize}  
+    \item \textbf{Haskell}:   
+        \begin{itemize}  
+            \item Limited built-in theorem proving capabilities  
+            \item Relies on external tools like LiquidHaskell for formal verification  
+            \item Properties often verified through testing rather than proofs  
+        \end{itemize}  
+    
+    \item \textbf{Agda}:  
+        \begin{itemize}  
+            \item First-class support for theorem proving  
+            \item Extensive library for mathematical proofs  
+            \item Requires explicit proof terms  
+        \end{itemize}  
+    
+    \item \textbf{Idris2}:  
+        \begin{itemize}  
+            \item Balanced approach to theorem proving  
+            \item Automated proof search capabilities  
+            \item Integration of proofs with practical programming  
+        \end{itemize}  
+\end{itemize}  
+
+\subsection{Syntax and Learning Curve}  
+The syntax and learning curve vary significantly:  
+
+\begin{itemize}  
+    \item \textbf{Haskell}: Most accessible syntax, familiar to many functional programmers  
+    \item \textbf{Agda}: Steeper learning curve, requires understanding of type theory  
+    \item \textbf{Idris2}: Haskell-like syntax with additional complexity from dependent types  
+\end{itemize}  
+
+An example showing similar functions across the three languages:  
+
+\begin{haskell}  
+-- Haskell: Simple pattern matching  
+reverse :: [a] -> [a]  
+reverse [] = []  
+reverse (x:xs) = reverse xs ++ [x]  
+\end{haskell}  
+
+\begin{agda}
+-- Agda: Explicit type universe and termination checking  
+reverse : ∀ {A : Set} → List A → List A  
+reverse []       = []  
+reverse (x ∷ xs) = reverse xs ++ (x ∷ [])  
+\end{agda}
+\begin{idris}
+-- Idris2: Dependent types with erasure  
+reverse : {0 a : Type} -> List a -> List a  
+reverse [] = []  
+reverse (x :: xs) = reverse xs ++ [x]  
+\end{idris}  
+
+\subsection{Use Case Recommendations}  
+Based on these comparisons, each language is best suited for different scenarios:  
+
+\begin{itemize}  
+    \item \textbf{Choose Haskell} for:  
+        \begin{itemize}  
+            \item Production-ready software development  
+            \item Large-scale applications  
+            \item When a mature ecosystem is crucial  
+        \end{itemize}  
+    
+    \item \textbf{Choose Agda} for:  
+        \begin{itemize}  
+            \item Mathematical proofs and formalization  
+            \item Academic research in type theory  
+            \item When maximum proof power is needed  
+        \end{itemize}  
+    
+    \item \textbf{Choose Idris2} for:  
+        \begin{itemize}  
+            \item Combining practical programming with formal verification  
+            \item Projects requiring precise resource management  
+            \item When dependent types need to coexist with practical features  
+        \end{itemize}  
+\end{itemize}
 \section{Key Features of Idris2}  
 \label{sec:key-features}  
 \subsection{Interactive Development Environment}  
