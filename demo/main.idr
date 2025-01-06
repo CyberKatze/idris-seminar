@@ -1,9 +1,11 @@
 module Main
 import Data.Vect
+import Regex
+import Data.List
 
 data N = Z | S N 
 
-data Even : N -> Type
+data Even : N -> Type 
 data Odd  : N -> Type
 
 data Even : N -> Type where
@@ -32,3 +34,36 @@ example = safeDiv 12 5
 index' : (i : Fin n) -> Vect n a -> a  
 index' FZ     (x :: xs) = x  
 index' (FS k) (x :: xs) = index' k xs  
+
+
+-- Regular expression
+regexA : Regex
+regexA = Star (Chr 'a')
+
+
+proofSingleChar : C.Match (Chr 'b') "b"
+proofSingleChar = C.MChr 'b'
+
+proofConcat: C.Match (Concat (Chr 'a') (Chr 'b')) "ab"
+proofConcat = C.MConcat (C.MChr 'a') (C.MChr 'b')
+
+-- ab*
+regexABStar : Regex
+regexABStar = Concat (Chr 'a') (Star (Chr 'b'))
+
+proofAltLeft : C.Match (Alt (Chr 'a') (Chr 'b')) "a"
+proofAltLeft  = C.MAltL (C.MChr 'a')
+
+proofRegexABStar : C.Match Main.regexABStar "ab"
+proofRegexABStar = C.MConcat (C.MChr 'a') (C.MStarCons (C.MChr 'b') C.MStarEmpty)
+
+proofRegexABStar2 : C.Match Main.regexABStar "abb"
+proofRegexABStar2 = C.MConcat (C.MChr 'a') (C.MStarCons (C.MChr 'b') (C.MStarCons (C.MChr 'b') C.MStarEmpty))
+
+main : IO ()
+main = do
+  putStrLn "is regexA matching 'a'? using boolean match?" 
+  -- print $ B.match regexA "a"
+
+x = matches regexA "aaa"
+
