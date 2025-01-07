@@ -193,215 +193,117 @@ The report concludes with a discussion of current limitations and practical cons
 
 \section{Background}  
 \label{sec:background}  
-Idris, first introduced by Edwin Brady in 2009, emerged as a programming language designed to explore dependent types in a practical programming context.  
-The language drew inspiration from both Haskell's practical functional programming approach and Agda's powerful type system.  
-While the original Idris (now known as Idris1) successfully demonstrated the potential of dependent types in practical programming, it also revealed certain limitations in its implementation and theoretical foundations \cite{brady2013idris}.  
+Programming languages traditionally separate types and values, which means that certain kinds of errors, particularly those related to invalid values or incorrect data structures, are only caught at runtime. This limitation has been a significant challenge in software engineering, as it allows many types of errors—such as accessing an element from an empty list—to slip through until the program is executed. The goal of dependent types is to solve this problem by allowing types to depend on values, enabling the type system itself to enforce correctness at compile time.
 
-These insights led to the development of Idris2, a complete redesign of the language implemented in Idris1 itself.  
-The new version introduced several significant improvements, including:  
-\begin{itemize}  
-    \item Better type checking performance  
-    \item Improved erasure of compile-time-only arguments  
-    \item Linear types through Quantitative Type Theory  
-    \item A more robust implementation based on experience with Idris1  
-\end{itemize}  
+The concept of dependent types is not new; it has roots in mathematical logic and type theory. However, its application in programming languages was limited for many years. Idris, first introduced by Edwin Brady in 2009, was a pioneering language that sought to make dependent types practical and usable in real-world programming. Idris was designed with the goal of enabling programmers to capture more precise specifications in the type system itself, making programs both more expressive and safer. Through its use of dependent types, Idris allowed for the formal verification of certain aspects of a program at compile time—such as proving that a vector is non-empty before calling the head function.
 
-A key example demonstrating Idris2's practical application of dependent types is the classic vector length safety:  
-\begin{idris}  
-data Vect : Nat -> Type -> Type where  
-    Nil  : Vect Z a  
-    (::) : a -> Vect k a -> Vect (S k) a  
+Despite its potential, Idris 1 had its limitations. The performance of type checking was not optimal for large programs, and the language’s implementation and theoretical foundations were not as robust as they could be. These shortcomings were particularly evident when trying to use Idris for large-scale or more complex applications. The need for improvement in both usability and performance led to the development of Idris 2.
 
--- Safe head function that can only be called on non-empty vectors  
-head : Vect (S n) a -> a  
-head (x :: _) = x  
+Idris 2 represents a complete redesign of the language, drawing on the lessons learned from Idris 1. One of the key challenges in the original Idris was the efficiency of type checking, especially when dealing with large programs. Idris 2 addressed this by significantly improving its type checking performance. Furthermore, the language introduced the ability to erase compile-time arguments more effectively, reducing the overhead in generating executable code. Additionally, Idris 2 incorporated linear types through Quantitative Type Theory, providing a mechanism for better resource management and more precise control over side-effects in functional programming.
 
--- This compiles  
-example1 : Integer  
-example1 = head [1,2,3]  
+These improvements made Idris 2 a more practical and scalable tool for developers looking to leverage dependent types.
+  
 
--- This fails to compile as the vector might be empty  
-example2 : Maybe Integer  
-example2 = head []  
-\end{idris}  
-\subsection{Quantitative Type Theory Foundations}  
-\label{subsec:qtt-foundations}  
-Quantitative Type Theory (QTT) extends traditional dependent type theory by adding explicit tracking of how variables are used in programs \cite{atkey2018syntax}. In Idris2, QTT serves two main purposes:  
-\begin{itemize}  
-    \item Providing clear type-level guarantees about which values are required at runtime  
-    \item Enabling precise tracking of resource usage through linear types  
-\end{itemize}  
+\section{Theorem Proving}
+\label{sec:Propositions and judgments}
+\subsection{Propositions and Judgments}
+Before delving into theorem proving, it is essential to understand the foundational framework of constructive logic. Also known as intuitionistic logic, it differs from classical logic by rejecting the Law of Excluded Middle—which asserts that every proposition is either true or false. Instead, constructive logic considers a proposition true only if it can be explicitly proven. Thus, an unproven proposition is not necessarily false; it may simply be unprovable.
 
-\subsubsection{Core Concepts}  
-QTT in Idris2 uses three fundamental quantities that specify how variables can be used:  
-\begin{itemize}  
-    \item 0: The variable is used only at compile time and erased at runtime  
-    \item 1: The variable must be used exactly once at runtime (linear)  
-    \item $\omega$: The variable can be used any number of times (unrestricted)  
-\end{itemize}  
-
-For example, here's how quantities work in practice:  
-\begin{idris}  
--- The 0 quantity means 'n' is erased at runtime  
-length : {0 n : Nat} -> Vect n a -> Nat  
-length [] = 0  
-length (x :: xs) = 1 + length xs  
-
--- The 1 quantity ensures the file handle is used exactly once  
-writeAndClose : (1 handle : File) -> IO ()  
-writeAndClose handle = do  
-    writeFile handle "Hello"  
-    closeFile handle  -- Must close the file exactly once  
-\end{idris}  
-
-\subsubsection{Benefits of QTT}  
-The integration of QTT in Idris2 provides several key advantages:  
-\begin{itemize}  
-    \item \textbf{Erasure Control}: Clear type-level specifications of which values are needed at runtime  
-    \item \textbf{Resource Safety}: Linear types ensure resources are used exactly once  
-    \item \textbf{Performance}: Better control over runtime behavior through erasure  
-    \item \textbf{Protocol Safety}: Ability to enforce correct usage of protocols and state machines  
-\end{itemize}  
-
-\section{Comparing Idris2 with Haskell and Agda}  
-While Idris2, Haskell, and Agda are all functional programming languages with strong type systems, they each serve different purposes and offer distinct approaches to type theory and practical programming. This section examines their key differences and similarities across various aspects.  
-
-\subsection{Type System Characteristics}  
-\begin{itemize}  
-    \item \textbf{Haskell}: Features a Hindley-Milner type system\footnote{Named after Roger Hindley and Robin Milner for their foundational work on type inference \cite{hindley1969principal,milner1978theory}.} with type classes, offering strong static typing without dependent types. Type-level programming is possible through extensions but is not a core feature.  
-    
-    \item \textbf{Agda}: Implements a dependent type system based on Martin-Löf Type Theory\footnote{Martin-Löf's type theory \cite{martin1984intuitionistic} introduced dependent types and laid the foundation for modern proof assistants like Agda.}, primarily focused on theorem proving and formal verification. Its type system is more expressive than Haskell's but requires more manual proof work.  
-    
-    \item \textbf{Idris2}: Combines practical programming with dependent types through QTT, offering a middle ground between Haskell's practicality and Agda's theorem-proving capabilities. Its type system supports both runtime and compile-time type checking with explicit erasure control.  
-\end{itemize}  
-
-\subsection{Practical Programming Aspects}  
-Consider the following example implementing a safe list indexing function in all three languages:  
-
-\begin{haskell}
--- Haskell: Runtime safety through Maybe type  
-(!?) :: [a] -> Int -> Maybe a  
-xs !? n | n < 0     = Nothing  
-        | otherwise = case drop n xs of  
-                       []     -> Nothing  
-                       (x:_)  -> Just x  
-\end{haskell}
-
-\begin{agda}
--- Agda: Compile-time safety through dependent types  
-_!!_ : ∀ {A : Set} {n} → Vec A n → Fin n → A  
-(x ∷ xs) !! zero  = x  
-(x ∷ xs) !! suc i = xs !! i  
-\end{agda}
-
-\begin{idris}  
--- Idris2: Practical dependent types with erasure  
-index : (i : Fin n) -> Vect n a -> a  
-index FZ     (x :: xs) = x  
-index (FS k) (x :: xs) = index k xs  
-\end{idris}  
-
-Key differences in practical usage include:  
-\begin{itemize}  
-    \item \textbf{Development Experience}:  
-        \begin{itemize}  
-            \item Haskell offers the most mature ecosystem and tooling  
-            \item Agda focuses on interactive theorem proving  
-            \item Idris2 provides interactive type-driven development with practical programming features  
-        \end{itemize}  
-    
-    \item \textbf{Performance Considerations}:  
-        \begin{itemize}  
-            \item Haskell generally offers the best runtime performance  
-            \item Agda's focus is on correctness rather than performance  
-            \item Idris2's QTT enables better performance through erasure of compile-time-only values  
-        \end{itemize}  
-\end{itemize}  
-
-\subsection{Theorem Proving Capabilities}  
-The languages differ significantly in their approach to formal verification:  
-
-\begin{itemize}  
-    \item \textbf{Haskell}:   
-        \begin{itemize}  
-            \item Limited built-in theorem proving capabilities  
-            \item Relies on external tools like LiquidHaskell for formal verification  
-            \item Properties often verified through testing rather than proofs  
-        \end{itemize}  
-    
-    \item \textbf{Agda}:  
-        \begin{itemize}  
-            \item First-class support for theorem proving  
-            \item Extensive library for mathematical proofs  
-            \item Requires explicit proof terms  
-        \end{itemize}  
-    
-    \item \textbf{Idris2}:  
-        \begin{itemize}  
-            \item Balanced approach to theorem proving  
-            \item Automated proof search capabilities  
-            \item Integration of proofs with practical programming  
-        \end{itemize}  
-\end{itemize}  
-
-\subsection{Syntax and Learning Curve}  
-The syntax and learning curve vary significantly:  
-
-\begin{itemize}  
-    \item \textbf{Haskell}: Most accessible syntax, familiar to many functional programmers  
-    \item \textbf{Agda}: Steeper learning curve, requires understanding of type theory  
-    \item \textbf{Idris2}: Haskell-like syntax with additional complexity from dependent types  
-\end{itemize}  
-
-An example showing similar functions across the three languages:  
-
-\begin{haskell}  
--- Haskell: Simple pattern matching  
-reverse :: [a] -> [a]  
-reverse [] = []  
-reverse (x:xs) = reverse xs ++ [x]  
-\end{haskell}  
-
-\begin{agda}
--- Agda: Explicit type universe and termination checking  
-reverse : ∀ {A : Set} → List A → List A  
-reverse []       = []  
-reverse (x ∷ xs) = reverse xs ++ (x ∷ [])  
-\end{agda}
+Constructive logic builds a database of judgments, where each judgment is a formally validated proof. This approach ensures the logical system’s integrity by requiring concrete evidence for every proposition. For instance, proving a number is even involves explicitly providing a number that satisfies the condition, rather than merely asserting it. By avoiding assumptions like the Law of Excluded Middle, constructive logic maintains consistency and reliability, ensuring that only provable propositions are included in the system.
+\subsection{Equality}
+\label{sec:Equality}
+\subsubsection{definitional and propositional equality}
+Equality in Idris is captured by the Equal type, defined as follows:
 \begin{idris}
--- Idris2: Dependent types with erasure  
-reverse : {0 a : Type} -> List a -> List a  
-reverse [] = []  
-reverse (x :: xs) = reverse xs ++ [x]  
-\end{idris}  
+data (=) : a -> b -> Type where  
+    Reflexive : x = x
+\end{idris}
+This states that two values are equal if they are definitionally identical, with Reflexive serving as explicit evidence of their equality.
 
-\subsection{Use Case Recommendations}  
-Based on these comparisons, each language is best suited for different scenarios:  
+\begin{idris}
+    plusReducesL : (n : Nat) -> plus Z n = n
+    plusReducesL n = Reflexive
+\end{idris}
+This proposition asserts that adding zero to any number n results in n, which is definitionally true.
+\begin{idris}
+    plusReducesR : (n : Nat) -> plus n Z = n
+    plusReducesR n = Reflexive
+\end{idris}
+While plusReducesL is definitionally equal and proved by Reflexive, plusReducesR is not, because the function plus is defined by recursion on its first argument. When the first argument is Z, it reduces, but not when the second argument is Z. Therefore, Reflexive cannot prove plusReducesR directly.
+If an equality type can be proved using Reflexive alone, it is known as a definitional equality.
+\subsubsection{Heterogeneous Equality}
+Equality in Idris is heterogeneous, meaning that it allows for the possibility of proposing equalities between values of different types. It means suggesting that two values of different types can be considered equal under certain assumptions or relationships. It becomes essential when working with dependent types, where types themselves depend on values.
+\begin{idris}
+    vect_eq_length : (xs : Vect n a) -> (ys : Vect m a) ->
+    (xs = ys) -> n = m 
+\end{idris}
+(xs = ys) asserts that the two vectors are equal in both value and type.So if xs = ys, then n and m must also be equal, because the length of the vector (n or m) is part of its type. This is why the function can safely return n = m.
+\section{Features of Idris2}  
+\label{sec:features}
+\subsection{Multiplicities}
+Quantitative Type Theory (QTT) extends traditional dependent type theory by adding explicit tracking of how variables are used in programs \cite{atkey2018syntax}. 
 
-\begin{itemize}  
-    \item \textbf{Choose Haskell} for:  
-        \begin{itemize}  
-            \item Production-ready software development  
-            \item Large-scale applications  
-            \item When a mature ecosystem is crucial  
-        \end{itemize}  
-    
-    \item \textbf{Choose Agda} for:  
-        \begin{itemize}  
-            \item Mathematical proofs and formalization  
-            \item Academic research in type theory  
-            \item When maximum proof power is needed  
-        \end{itemize}  
-    
-    \item \textbf{Choose Idris2} for:  
-        \begin{itemize}  
-            \item Combining practical programming with formal verification  
-            \item Projects requiring precise resource management  
-            \item When dependent types need to coexist with practical features  
-        \end{itemize}  
-\end{itemize}
-\section{Key Features of Idris2}  
-\label{sec:key-features}  
+In QTT, each variable binding (including function arguments)
+has a multiplicity. QTT itself takes a general approach to multiplicities, allowing any semiring.
+For Idris 2, we make a concrete choice of semiring, where a multiplicity can be one of:
+\begin{lstlisting}
+    0: The variable is used only at compile time and erased at runtime
+    1: The variable must be used exactly once at runtime (linear)
+    omega: The variable can be used any number of times (unrestricted)
+\end{lstlisting}
+
+Multiplicities in Idris 2 describe how often a variable must be used within the scope of its binding. A variable is considered "used" when it appears in the body of a definition, as opposed to a type declaration, and when it is passed as an argument with multiplicity 1 or \(\omega\). The multiplicities of a function's arguments are specified by its type, and they dictate how many times the arguments can be used within the function's body. Variables with multiplicity \(\omega\) are considered unrestricted: they can be passed to argument positions with multiplicities 0, 1, or \(\omega\). On the other hand, a function that accepts an argument with multiplicity 1 guarantees that the argument will not be shared within its body in the future, although it is not required to ensure that it has not been shared in the past\cite{brady2021idris}.
+\subsection{Interface}
+we use interfaces (similar to type classes in Haskell) to define functions or operations that can work seamlessly across different types. This capability, known as overloading, is achieved by defining a common interface (a set of operations) and then providing specific implementations for each type that becomes an instance of the interface.
+
+\subsubsection{Implementing Show for Nat :}
+the Show interface is used to convert values into String.The key rule is uniqueness of the implementation , There should be only one implementation of am interface for specific type.
+\begin{idris}
+    Show Nat where
+    show Z     = "Zero"
+    show (S Z) = "One"
+    show (S (S k)) = "Two"
+    show (S (S (S k))) = "S(" ++ show (S (S k)) ++ ")"
+  
+\end{idris}
+Additionally, Implementations can have constraints. For instance, to implement Show for a vector (Vect n a), there must already be a Show implementation for the element type a.
+\begin{idris}
+    Show a => Show (Vect n a) where
+\end{idris}
+This is a constraint. It means the implementation of Show for Vect n a (a vector of n elements of type a) is only valid if the element type a itself has an instance of Show. This is a constraint. It means the implementation of Show for Vect n a (a vector of n elements of type a) is only valid if the element type a itself has an instance of Show.
+\begin{idris}
+    Show a => Show (Vect n a) where
+    show xs = "[" ++ show' xs ++ "]" where
+        show' : forall n . Vect n a -> String
+        show' Nil        = ""
+        show' (x :: Nil) = show x
+        show' (x :: xs)  = show x ++ ", " ++ show' xs
+\end{idris}
+\subsubsection{Type classes in Idris vs Haskell} 
+Type classes are a central feature of both Haskell and Idris 2. While they share many similarities, Idris 2's more expressive dependent type system enables additional flexibility and power.
+
+In Idris 2, type classes leverage dependent types, allowing types to depend on values. This extends polymorphism beyond types (as in Haskell) to include relationships between types and values, enabling more expressive and precise constraints. Haskell lacks this capability due to its non-dependent type system.
+
+In this Haskell example, we'll define a type class Summable for containers that can hold numeric values. The sumElements function will sum the elements of a container, but it will only work for the container's type, not based on the size of the container.
+\begin{haskell}
+  class Summable c where
+  sumElements :: Num a => c a -> a
+
+instance Summable [] where
+  sumElements xs = sum xs  
+\end{haskell}
+In Haskell, type classes like Summable work based on the type of the container ([] in our case) but have no knowledge of the container's size(Type-Only Polymorphism). The behavior is generalized and works for any size of container without any specialized handling.
+\begin{idris}
+    interface Summable (n : Nat) (c : Type) where
+    sumElements : Vect n c -> Int  
+  
+  
+    implementation Summable n Int where
+    sumElements [] = 0  
+    sumElements (x :: xs) = x + sumElements xs  
+  
+\end{idris}
+we can define the container's size as part of the type, enabling value-dependent polymorphism. This means we can write type classes and functions that depend on both the type and size of the container. For example, the sum of a vector is defined based on the number of elements in the vector.
 \subsection{Interactive Development Environment}  
 \label{subsec:ide}  
 % Type-driven development workflow  
