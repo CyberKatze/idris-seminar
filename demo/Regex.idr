@@ -11,6 +11,14 @@ data Regex =
   | Alt Regex Regex
   | Star Regex
 
+-- First, implement Show for Regex  
+export  
+Show Regex where  
+  show Empty = "ε"  -- epsilon for empty string  
+  show (Chr c) = show c  
+  show (Concat r1 r2) = "(" ++ show r1 ++ show r2 ++ ")"  
+  show (Alt r1 r2) = "(" ++ show r1 ++ "|" ++ show r2 ++ ")"  
+  show (Star r) = "(" ++ show r ++ ")*"  
 
 
 -- Helper function for string splits  
@@ -52,6 +60,8 @@ matches (Star r) str =
 public export  
 match : Regex -> String -> Bool  
 match r s = not (null (matches r s))  
+
+
 namespace C
   public export
   data Match: Regex -> String -> Type where

@@ -2,6 +2,7 @@ module Main
 import Data.Vect
 import Regex
 import Data.List
+import RegexParser
 
 data N = Z | S N 
 
@@ -63,7 +64,17 @@ proofRegexABStar2 = C.MConcat (C.MChr 'a') (C.MStarCons (C.MChr 'b') (C.MStarCon
 main : IO ()
 main = do
   putStrLn "is regexA matching 'a'? using boolean match?" 
+  printLn $ parseRegexString "a*b|c"  
   -- print $ B.match regexA "a"
 
 x = matches regexA "aaa"
 
+-- As a record  
+record Person where  
+  constructor MkPerson  
+  name : String  
+  age : Int  
+  email : String
+
+pers1 : Person
+pers1 = MkPerson "Alice" 25 "Joe"
