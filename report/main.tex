@@ -304,6 +304,15 @@ In Haskell, type classes like Summable work based on the type of the container (
   
 \end{idris}
 we can define the container's size as part of the type, enabling value-dependent polymorphism. This means we can write type classes and functions that depend on both the type and size of the container. For example, the sum of a vector is defined based on the number of elements in the vector.
+\subsection{Bidirectional Type Checking}
+\subsubsection{Type Checking in Idris2 vs Haskell}
+Haskell uses a monotonic type checking system, primarily based on ** Hindley-Milner type inference** with extensions for generalized algebraic data types (GADTs) and type families.
+
+Types are typically inferred using a unification algorithm, which attempts to match the types of expressions with the expected types.
+The Haskell compiler (GHC) uses a form of principal type inference for non-dependent types, meaning it attempts to deduce the most general type that fits the given expression, but it doesn't differentiate between checking and synthesizing as explicitly.
+
+However, Idris 2 uses bidirectional type checking, which separates the roles of type synthesis (deducing types) and type checking (verifying types). This is crucial for dependent types and provides more flexibility and efficiency in type inference.
+
 \subsection{Interactive Development Environment}  
 \label{subsec:ide}  
 % Type-driven development workflow  
