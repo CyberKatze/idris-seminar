@@ -73,7 +73,8 @@
 }{%
 	\end{quote}%
 }
-
+\usepackage{listings}
+\usepackage{amsmath}  % For math symbols like omega
 % Define Idris2 language keywords
 \lstdefinelanguage{Idris}{
     morekeywords={
@@ -215,22 +216,23 @@ Constructive logic builds a database of judgments, where each judgment is a form
 \subsubsection{definitional and propositional equality}
 Equality in Idris is captured by the Equal type, defined as follows:
 \begin{idris}
-data (=) : a -> b -> Type where  
-    Reflexive : x = x
+   data (=) : a -> b -> Type where  
+   Refl : x = x
 \end{idris}
 This states that two values are equal if they are definitionally identical, with Reflexive serving as explicit evidence of their equality.
 
 \begin{idris}
     plusReducesL : (n : Nat) -> plus Z n = n
-    plusReducesL n = Reflexive
+    plusReducesL n = Refl
 \end{idris}
 This proposition asserts that adding zero to any number n results in n, which is definitionally true.
 \begin{idris}
     plusReducesR : (n : Nat) -> plus n Z = n
-    plusReducesR n = Reflexive
+    plusReducesR n = Refl
 \end{idris}
-While plusReducesL is definitionally equal and proved by Reflexive, plusReducesR is not, because the function plus is defined by recursion on its first argument. When the first argument is Z, it reduces, but not when the second argument is Z. Therefore, Reflexive cannot prove plusReducesR directly.
-If an equality type can be proved using Reflexive alone, it is known as a definitional equality.
+This is not definitionally true, because the plus function is defined recursively on its first argument. While adding zero as the second argument reduces for specific cases, the reduction is not immediate or definitional. As a result, Reflexive cannot prove plusReducesR directly.
+
+In Idris, an equality type that can be proved using Reflexive alone is known as definitional equality. For cases like plusReducesR, where Reflexive is insufficient, additional techniques, such as propositional equality or rewriting, may be required.
 \subsubsection{Heterogeneous Equality}
 Equality in Idris is heterogeneous, meaning that it allows for the possibility of proposing equalities between values of different types. It means suggesting that two values of different types can be considered equal under certain assumptions or relationships. It becomes essential when working with dependent types, where types themselves depend on values.
 \begin{idris}
@@ -238,21 +240,86 @@ Equality in Idris is heterogeneous, meaning that it allows for the possibility o
     (xs = ys) -> n = m 
 \end{idris}
 (xs = ys) asserts that the two vectors are equal in both value and type.So if xs = ys, then n and m must also be equal, because the length of the vector (n or m) is part of its type. This is why the function can safely return n = m.
+\subsubsection{Substitutive Property (Leibniz Equality)}
+Idris also supports reasoning about equality using the substitutive property, often referred to as Leibniz Equality.
+It formalizes the idea that if two values are equal, they are indistinguishable under any property. In Idris, this can be expressed as:
+\begin{idris}
+leibnizEq : (a : A) -> (b : A) -> Type
+leibnizEq a b = (P : A -> Type) -> P a -> P b
+\end{idris}
 \section{Features of Idris2}  
 \label{sec:features}
+\subsection{Introduction to Quantitative Type Theory (QTT)}
+Quantitative Type Theory (QTT) extends traditional dependent type theory by adding explicit tracking of how variables are used in programs \cite{atkey2018syntax}. Developed by Conor McBride, it addresses inefficiencies in traditional type theory, where variables serve both as type constructors and computational entities. By explicitly modeling variable usage, QTT improves efficiency, especially in resource management like memory.
 \subsection{Multiplicities}
-Quantitative Type Theory (QTT) extends traditional dependent type theory by adding explicit tracking of how variables are used in programs \cite{atkey2018syntax}. 
+In QTT,
+each variable binding is associated with a quantity (or multiplicity) which denotes the number
+of times a variable can be used in its scope: either zero, exactly once, or unrestricted \cite{atkey2018syntax}.
 
-In QTT, each variable binding (including function arguments)
-has a multiplicity. QTT itself takes a general approach to multiplicities, allowing any semiring.
-For Idris 2, we make a concrete choice of semiring, where a multiplicity can be one of:
-\begin{lstlisting}
-    0: The variable is used only at compile time and erased at runtime
-    1: The variable must be used exactly once at runtime (linear)
-    omega: The variable can be used any number of times (unrestricted)
+\begin{lstlisting}[mathescape=true]
+  0: The variable is used only at compile time and erased at runtime
+  1: The variable must be used exactly once at runtime (linear)
+  $\omega$: The variable can be used any number of times (unrestricted)
 \end{lstlisting}
+\vspace{1em}  % Adds one line space
 
 Multiplicities in Idris 2 describe how often a variable must be used within the scope of its binding. A variable is considered "used" when it appears in the body of a definition, as opposed to a type declaration, and when it is passed as an argument with multiplicity 1 or \(\omega\). The multiplicities of a function's arguments are specified by its type, and they dictate how many times the arguments can be used within the function's body. Variables with multiplicity \(\omega\) are considered unrestricted: they can be passed to argument positions with multiplicities 0, 1, or \(\omega\). On the other hand, a function that accepts an argument with multiplicity 1 guarantees that the argument will not be shared within its body in the future, although it is not required to ensure that it has not been shared in the past\cite{brady2021idris}.
+\subsubsection{Lineaitiy Example} 
+In Idris 2, linearity or multiplicity of 1 as we saw, is a property of values in the type system that enforces the idea that a value must be used exactly once. This concept is rooted in linear logic and ensures resources are managed precisely, preventing accidental duplication or omission. 
+
+\vspace{1em}  % Adds one line space
+We have a File System Protocol that allows us to open a file, close it and delete . The protocol enforces linearity to ensure that files are managed correctly.
+The idea is to use linearity to enforce that:
+\begin{itemize}
+  \item[--] A file cannot be opened if it's already open.
+  \item[--] A file cannot be closed if it's already closed.
+  \item[--] A file cannot be deleted unless it's closed.
+\end{itemize}
+
+A file can be in one of two states: Opened or Closed:
+\begin{idris} 
+  
+  data FileState = Opened | Closed
+
+\end{idris}
+We model the file's state in the type system:
+\begin{idris}
+  data File : FileState -> Type where
+    MkFile : (fileName : String) -> File st
+
+\end{idris}
+the transitions between states:
+\begin{idris}
+  openFile : (1 f : File Closed) -> File Opened
+  openFile (MkFile name) = MkFile name
+  
+  closeFile : (1 f : File Opened) -> File Closed
+  closeFile (MkFile name) = MkFile name
+  
+\end{idris}
+Ensure that files are created and used linearly:
+newFile accepts a function that takes a Closed file, ensuring the file is used exactly once.
+\begin{idris}
+  newFile : (1 p : (1 f : File Closed) -> IO ()) -> IO ()
+  newFile p = p (MkFile "example.txt")
+    
+\end{idris}
+Only files in the Closed state can be deleted :
+\begin{idris}
+  deleteFile : (1 f : File Closed) -> IO ()
+  deleteFile _ = putStrLn "File deleted."
+\end{idris}
+A protocol example can be seen below:
+\begin{idris}
+  fileProg : IO ()
+  fileProg = 
+      newFile $ \f => 
+          let f' = openFile f
+              f'' = closeFile f' in
+              deleteFile f''
+  
+\end{idris}
+This protocol demonstrates how linear types in Idris2 enforce safe resource usage by modeling state transitions, preventing runtime errors, and ensuring predictable, reliable programs.
 \subsection{Interface}
 we use interfaces (similar to type classes in Haskell) to define functions or operations that can work seamlessly across different types. This capability, known as overloading, is achieved by defining a common interface (a set of operations) and then providing specific implementations for each type that becomes an instance of the interface.
 
@@ -270,7 +337,7 @@ Additionally, Implementations can have constraints. For instance, to implement S
 \begin{idris}
     Show a => Show (Vect n a) where
 \end{idris}
-This is a constraint. It means the implementation of Show for Vect n a (a vector of n elements of type a) is only valid if the element type a itself has an instance of Show. This is a constraint. It means the implementation of Show for Vect n a (a vector of n elements of type a) is only valid if the element type a itself has an instance of Show.
+This is a constraint. It means the implementation of Show for Vect n a (a vector of n elements of type a) is only valid if the element type a itself has an instance of Show. 
 \begin{idris}
     Show a => Show (Vect n a) where
     show xs = "[" ++ show' xs ++ "]" where
@@ -284,26 +351,7 @@ Type classes are a central feature of both Haskell and Idris 2. While they share
 
 In Idris 2, type classes leverage dependent types, allowing types to depend on values. This extends polymorphism beyond types (as in Haskell) to include relationships between types and values, enabling more expressive and precise constraints. Haskell lacks this capability due to its non-dependent type system.
 
-In this Haskell example, we'll define a type class Summable for containers that can hold numeric values. The sumElements function will sum the elements of a container, but it will only work for the container's type, not based on the size of the container.
-\begin{haskell}
-  class Summable c where
-  sumElements :: Num a => c a -> a
 
-instance Summable [] where
-  sumElements xs = sum xs  
-\end{haskell}
-In Haskell, type classes like Summable work based on the type of the container ([] in our case) but have no knowledge of the container's size(Type-Only Polymorphism). The behavior is generalized and works for any size of container without any specialized handling.
-\begin{idris}
-    interface Summable (n : Nat) (c : Type) where
-    sumElements : Vect n c -> Int  
-  
-  
-    implementation Summable n Int where
-    sumElements [] = 0  
-    sumElements (x :: xs) = x + sumElements xs  
-  
-\end{idris}
-we can define the container's size as part of the type, enabling value-dependent polymorphism. This means we can write type classes and functions that depend on both the type and size of the container. For example, the sum of a vector is defined based on the number of elements in the vector.
 \subsection{Bidirectional Type Checking}
 \subsubsection{Type Checking in Idris2 vs Haskell}
 Haskell uses a monotonic type checking system, primarily based on ** Hindley-Milner type inference** with extensions for generalized algebraic data types (GADTs) and type families.
