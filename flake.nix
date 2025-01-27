@@ -19,6 +19,7 @@
             pkgs.idris2
             pkgs.idris2Packages.idris2Lsp
             tex
+            pkgs.presenterm
           ];  
         };  
 
