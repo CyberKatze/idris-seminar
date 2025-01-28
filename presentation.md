@@ -71,7 +71,65 @@ leibnizEq a b = (P : (_ -> Type)) -> P a -> P b
 
 <!-- end_slide -->
 ### Erasure
+ it allows us to be precise about which values are relevant at run time!!!
 
+ Idris 1 :
+ ```haskell
+vlen : Vect n a -> Nat
+vlen {n} xs = n
+
+ ```
+Idris 1 infers whether n is needed at runtime.
+ 
+ <!-- incremental_lists: false -->
+Problem: The programmer has no explicit control or indication of whether n is retained at runtime or erased.
+<!-- new_lines: 1 -->
+Idris 2 :
+```haskell
+vlen : {n : Nat} -> Vect n a -> Nat
+vlen xs = n
+
+```
+The type now explicitly states that n is a compile-time implicit argument that will be passed as part of the function call.
+<!-- end_slide -->
+in Idris 2, names bound in types are also available in the definition without explicitly rebinding them.)
+
+This also means that when you call vlen, you need the length available
+
+```haskell
+sumLengths : Vect m a -> Vect n a —> Nat
+sumLengths xs ys = vlen xs + vlen ys
+```
+
+```haskell
+vlen.idr:7:20--7:28:While processing right hand side of Main.sumLengths at vlen.idr:7:1--10:1:
+m is not accessible in this context
+```
+<!-- end_slide -->
+by replacing the right hand side of sumLengths with a hole…
+
+```haskell
+sumLengths : Vect m a -> Vect n a -> Nat
+sumLengths xs ys = ?sumLengths_rhs
+```
+then checking the hole’s type 
+
+```haskell
+Main> :t sumLengths_rhs
+ 0 n : Nat
+ 0 a : Type
+ 0 m : Nat
+   ys : Vect n a
+   xs : Vect m a
+-------------------------------------
+sumLengths_rhs : Nat
+```
+we need to give bindings for m and n with unrestricted multiplicity
+
+```haskell
+sumLengths : {m, n : _} -> Vect m a -> Vect n a —> Nat
+sumLengths xs ys = vlen xs + vlen xs
+```
 <!-- end_slide -->
 ### Linearity
 
