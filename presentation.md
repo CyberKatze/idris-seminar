@@ -126,6 +126,29 @@ sumLengths : {m, n : _} -> Vect m a -> Vect n a —> Nat
 sumLengths xs ys = vlen xs + vlen xs
 ```
 <!-- end_slide -->
+<!-- end_slide -->
+One final note on erasure:
+```haskell
+badNot : (0 x : Bool) -> Bool
+badNot False = True
+badNot True = False
+```
+This is rejected with the error:
+```haskell
+badnot.idr:2:1--3:1:Attempt to match on erased argument False in
+Main.badNot
+```
+The following, however, is fine.
+```haskell
+data SBool : Bool -> Type where
+     SFalse : SBool False
+     STrue  : SBool True
+```
+```haskell
+sNot : (0 x : Bool) -> SBool x -> Bool
+sNot False SFalse = True
+sNot True  STrue  = False
+```
 ### Linearity
 <!-- column_layout: [8,10] -->
 
@@ -166,27 +189,4 @@ fileProg =
         f = closeFile f in 
         deleteFile f
 
-```
-<!-- end_slide -->
-One final note on erasure:
-```haskell
-badNot : (0 x : Bool) -> Bool
-badNot False = True
-badNot True = False
-```
-This is rejected with the error:
-```haskell
-badnot.idr:2:1--3:1:Attempt to match on erased argument False in
-Main.badNot
-```
-The following, however, is fine.
-```haskell
-data SBool : Bool -> Type where
-     SFalse : SBool False
-     STrue  : SBool True
-```
-```haskell
-sNot : (0 x : Bool) -> SBool x -> Bool
-sNot False SFalse = True
-sNot True  STrue  = False
 ```
