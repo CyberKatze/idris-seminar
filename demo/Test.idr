@@ -49,6 +49,8 @@ fileProg : IO ()
 fileProg = do
     newFile $ \f =>
       let f = openFile f 
-          f = closeFile f in 
-          deleteFile f
-    putStrLn "File program done."
+          f = closeFile f
+          f = openFile f
+          f = closeFile f
+          in 
+            putStrLn "File program done."

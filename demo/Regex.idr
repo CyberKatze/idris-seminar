@@ -61,12 +61,12 @@ simplifyCorrect (Concat Epsilon (Star x)) s (((y, z) ** (w, (v, t)))) =
       prf_2 = trans w prf_1
       in rewrite prf_2 in t 
 simplifyCorrect (Concat (Chr x) Empty) s (((y, z) ** (w, (v, t)))) = t 
-simplifyCorrect (Concat (Chr x) Epsilon) s (((y, z) ** (w, (v, t)))) =
-  let prf_1 = cong (y ++) t
-      prf_2 = trans w prf_1
-      prf_3 = appendNilRightNeutral y 
-      prf_4 = trans (trans prf_2 prf_3) v
-      in prf_4
+simplifyCorrect (Concat (Chr x) Epsilon) s (((y, z) ** (w, (v, t)))) = 
+let prf_1 = cong (y ++) t
+    prf_2 = trans w prf_1
+    prf_3 = appendNilRightNeutral y
+    prf_4 = trans (trans prf_2 prf_3) v
+  in prf_4
 simplifyCorrect (Concat (Chr x) (Chr y)) s l = l 
 simplifyCorrect (Concat (Chr x) (Concat y z)) s l = l 
 simplifyCorrect (Concat (Chr x) (Alt y z)) s l = l 
@@ -189,6 +189,7 @@ matches (Star r) str =
 public export
 match : Regex Char -> List Char -> Bool  
 match r str = elem str (matches r str)
+
 
 -- namespace C
 --   public export

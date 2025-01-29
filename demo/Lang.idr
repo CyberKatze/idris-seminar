@@ -17,8 +17,6 @@ public export
 empty : Lang a
 empty _ = Void
 
-
-
 -- Universal language: all strings
 public export
 univ : Lang a

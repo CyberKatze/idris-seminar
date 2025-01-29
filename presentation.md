@@ -1,13 +1,20 @@
 ---
+theme:
+  name: catppuccin-latte
 title: Idris2
-author: Zahra Khodabakhshian
+authors: 
+    - Zahra Khodabakhshian
+    - Mehrdad Shahidi
+    - "Supervisor: Cass Alexandru"
 ---
 
 ## Contents
 
 - Background
-- Idris2 features
+- Equality in Idris
+- Multiplicities in Idris
 - Problem specification
+- Demo 
 
 <!-- end_slide -->
 ## Background
@@ -46,9 +53,12 @@ plusReducesR (S k) =
 <!-- end_slide -->
 
 ### Heterogeneous Equality
+Equality in Idris is Heterogeneous, meaning that we can even propose equalities between values in different type.
+
 ```haskell
 vect_eq_length : (xs : Vect n a) -> (ys : Vect m a) ->
 (xs = ys) -> n = m
+
 vect_eq_length  v1 _ Refl = Refl
 
 ```
@@ -56,8 +66,11 @@ vect_eq_length  v1 _ Refl = Refl
 <!-- end_slide -->
 
 ## Multiplicities
-- Quantitative Type Theory
+<!-- new_lines: 1 -->
+- Idris 2 is based on Quantitative Type Theory (QTT), a core language developed by Bob Atkey and Conor McBride.
+- In practice, this means that every variable in Idris 2 has a quantity associated with it.
 
+<!-- new_lines: 2 -->
 ```latex
 0: The variable is used only at compile time and erased at runtime
 1: The variable must be used exactly once at runtime (linear)
@@ -85,7 +98,9 @@ vlen : {n : Nat} -> Vect n a -> Nat
 vlen xs = n
 
 ```
+we need to state explicitly that n is needed at run time
 The type now explicitly states that n is a compile-time implicit argument that will be passed as part of the function call.
+
 <!-- end_slide -->
 in Idris 2, names bound in types are also available in the definition without explicitly rebinding them.)
 
@@ -191,3 +206,167 @@ fileProg =
         deleteFile f
 
 ```
+<!-- end_slide -->
+```mermaid +render  +width:100%
+
+stateDiagram-v2
+    [*] --> Closed: newFile
+    Closed --> Opened: openFile
+    Opened --> Closed: closeFile
+    Closed --> [*]: deleteFile
+
+    note right of Closed
+        File can only be used once
+        due to linearity (1)
+    end note
+
+    note right of Opened
+        Operations consume the file
+        and produce new state
+    end note
+
+```
+<!-- end_slide -->
+
+## Problem specification
+-  Prove Correctness : 
+```haskell
+match: Regex Char -> List Char -> Bool
+-- Correctness
+correctness : (r : Regex Char) -> (s : List Char) ->   
+             match r s = True <-> InLanguage r s 
+```
+### Regular expression
+- Regex AST
+```haskell
+data Regex: (a: Type) -> Type where
+  Empty: Regex a
+  Epsilon: Regex a
+  Chr : a -> Regex a
+  Concat: Regex a -> Regex a -> Regex a
+  Alt:  Regex a -> Regex a -> Regex a
+  Star :  Regex a -> Regex a
+
+```
+<!-- end_slide -->
+### Specify formal languages in idris
+- We usually defined them in terms of Set Theory
+```latex +render
+$L = \{w \in \Sigma^* \mid P(w)\}$
+```
+- How we can define them in terms of Type Theory?
+<!-- pause -->
+
+```latex +render
+$
+\text{Lang} = A^* \rightarrow \text{Set } \ell $
+
+```
+<!-- column_layout: [2,3] -->
+
+<!-- column: 0 -->
+```latex +render
+$\varnothing\ w = \bot $
+
+$\mathcal{U}\ w = \top $
+
+$1\ w = w \equiv []$
+
+$'c\ w = w \equiv [c]$
+
+$(s \cdot P)\ w = s \times P\ w$
+```
+<!-- column: 1 -->
+
+```latex +render
+$(P \cap Q)\ w = P\ w \times Q\ w  $
+
+
+$(P \cup Q)\ w = P\ w \uplus Q\ w  $
+
+$
+(P * Q)\ w = \exists \lambda (u, v) \rightarrow (w \equiv u \mathbin{\#} v) \times P\ u \times Q\ v  $
+
+$
+ (P^\star)\ w = \exists \lambda\ ws \rightarrow (w \equiv \text{concat}\ ws) \times \text{All}\ P\ ws  $
+
+```
+
+<!-- end_slide -->
+#### How in Idris looks like
+<!-- column_layout: [2,3] -->
+
+<!-- column: 0 -->
+```haskell
+Lang : (a: Type) -> Type
+Lang a = List a -> Type
+
+-- Empty language: no strings
+empty : Lang a
+empty _ = Void
+
+-- Universal language: all strings
+univ : Lang a
+univ _ = Unit 
+
+-- Language contain empty string
+eps : Lang a
+eps w = w = []
+
+-- Single-token language
+tok : a -> Lang a
+tok c w = w = [c]
+
+-- Scalar multiplication
+-- not sure when this is useful
+(:.:) : Type -> Lang a -> Lang a
+(:.:) s l w = Pair s (l w)
+```
+
+<!-- column: 1 -->
+```haskell
+-- A ⊎ B
+union: Lang a -> Lang a -> Lang a
+union l1 l2 w = Either (l1 w) (l2 w)
+
+-- A ∩ B
+intersection: Lang a -> Lang a -> Lang a
+intersection l1 l2 w = Pair (l1 w) (l2 w)
+
+-- ∃ x. p x, idris couldn't resolve missing type
+exists:{a, b : Type} -> (p: (Pair a b) -> Type) -> Type 
+exists {a} {b} p =  DPair (a, b) p 
+
+langConcat: {a: Type} -> Lang a -> Lang a -> Lang a  
+langConcat l1 l2 w = exists (\ (w1 , w2) => 
+    Pair (w = w1 ++ w2) (Pair (l1 w1) (l2 w2)))
+
+concat: {a: Type} -> List (List a )-> List a
+concat = foldr (++) []
+
+langStar: {a: Type} -> Lang a -> Lang a
+langStar l w  = 
+    DPair _ (\ws => Pair (w = concat ws ) (All l ws))
+
+```
+<!-- end_slide -->
+
+### Map regular expression to language
+
+```haskell
+lang : {a: Type } -> Regex a -> Lang a
+lang Empty = empty
+lang Epsilon = eps
+lang (Chr c) = tok c
+lang (Concat x y) = langConcat (lang x) (lang y)
+lang (Alt x y) = union (lang x) (lang y)
+lang (Star x) = langStar (lang x)
+```
+
+
+<!-- end_slide -->
+## References
+
+-  
+- Elliott, Conal. "Symbolic and Automatic Differentiation of Languages." 2021.
+
