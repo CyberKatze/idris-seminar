@@ -6,12 +6,12 @@ author: Zahra Khodabakhshian
 ## Contents
 
 - Background
-- Idris2 features
+- Equality in idris
 - Problem specification
 
 <!-- end_slide -->
 ## Background
-Idris 1 first introduced by Edwin Brady in 2009.
+Idris 1 first introduced by Edwin Brady in 2007.
 <!-- new_lines: 1 -->
 Idris was one of the first languages to bring dependent types into the practical world of programming.
 
@@ -46,18 +46,25 @@ plusReducesR (S k) =
 <!-- end_slide -->
 
 ### Heterogeneous Equality
+Equality in Idris is heterogeneous, meaning that we can even propose equalities between values in different types:
+
 ```haskell
 vect_eq_length : (xs : Vect n a) -> (ys : Vect m a) ->
 (xs = ys) -> n = m
-vect_eq_length  v1 _ Refl = Refl
+```
+```haskell
+vect_eq_length xs _ Refl = Refl
 
 ```
 
 <!-- end_slide -->
 
 ## Multiplicities
-- Quantitative Type Theory
+<!-- new_lines: 1 -->
+- Idris 2 is based on Quantitative Type Theory (QTT), a core language developed by Bob Atkey and Conor McBride. 
 
+- In practice, this means that every variable in Idris 2 has a quantity associated with it.
+<!-- new_lines: 2 -->
 ```latex
 0: The variable is used only at compile time and erased at runtime
 1: The variable must be used exactly once at runtime (linear)
@@ -85,6 +92,7 @@ vlen : {n : Nat} -> Vect n a -> Nat
 vlen xs = n
 
 ```
+we need to state explicitly that n is needed at run time
 The type now explicitly states that n is a compile-time implicit argument that will be passed as part of the function call.
 <!-- end_slide -->
 in Idris 2, names bound in types are also available in the definition without explicitly rebinding them.)
