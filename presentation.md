@@ -126,7 +126,7 @@ sumLengths : {m, n : _} -> Vect m a -> Vect n a —> Nat
 sumLengths xs ys = vlen xs + vlen xs
 ```
 <!-- end_slide -->
-<!-- end_slide -->
+
 One final note on erasure:
 ```haskell
 badNot : (0 x : Bool) -> Bool
@@ -149,6 +149,7 @@ sNot : (0 x : Bool) -> SBool x -> Bool
 sNot False SFalse = True
 sNot True  STrue  = False
 ```
+<!-- end_slide -->
 ### Linearity
 <!-- column_layout: [8,10] -->
 
