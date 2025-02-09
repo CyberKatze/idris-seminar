@@ -5,7 +5,8 @@ import Data.String
 import Data.Vect
 import Lang
 import Data.List.Quantifiers
-
+import Data.List.Elem
+import Decidable.Equality 
 public export
 data Regex: (a: Type) -> Type where
   Empty: Regex a
@@ -25,8 +26,8 @@ lang (Star x) = langStar (lang x)
 
 covering
 simplify : Regex a -> Regex a
-simplify (Concat Empty _) = Empty  
-simplify (Concat _ Empty) = Empty  
+simplify (Concat Empty r) = Empty  
+simplify (Concat r Empty) = Empty  
 simplify (Concat Epsilon r ) = r  
 simplify (Concat r Epsilon ) = r  
 simplify (Alt Empty r) = r  
@@ -151,9 +152,44 @@ Show (Regex Char) where
 
 
 -- Helper function for string splits  
-splits : List Char -> List (List Char, List Char)  
-splits chars =  zip (inits chars) (tails chars)  
+splits : List Char -> List (List Char, List Char)
+splits [] = [([],[])]
+splits (x :: xs) = ([], x :: xs) :: (map (\(ys, zs) => (x :: ys, zs)) (splits xs))
 
+mapElem : {a, b : Type} ->
+(f : a -> b) ->
+(x : a) ->
+(xs : List a) ->
+Elem x xs ->
+Elem (f x) (map f xs)
+mapElem f x [] prf = absurd prf
+mapElem f x (x::xs) Here = Here
+mapElem f x (y::ys) (There prf) = There (mapElem f x ys prf)
+
+splitRightNil : (t : List Char) -> Elem (t, []) (splits t)
+splitRightNil [] = Here
+splitRightNil (x :: xs) = ?eeef
+
+
+
+splitElem : {s : List Char} ->
+(z, w : List Char) ->
+(p : s = z ++ w) ->
+Elem (z, w) (splits s)
+splitElem {s = ([] ++ _)} [] [] Refl = Here 
+splitElem {s = ([] ++ _)} [] (x :: xs) Refl = Here 
+splitElem {s = ((_ :: _) ++ [])} (x :: xs) [] Refl =  splitRightNil _ 
+splitElem {s = s} (x :: xs) (y :: ys) prf = ?herere_3 
+
+-- lemmma
+inAppLeft : {xs, ys : List a}-> Elem x xs -> Elem x (xs ++ ys)
+inAppLeft prf {xs = []} = absurd prf
+inAppLeft Here {xs = (x :: xs)} = Here
+inAppLeft (There z) {xs = (y :: xs)} = There (inAppLeft z)
+
+inAppRight : {xs, ys : List a}-> Elem x ys -> Elem x (xs ++ ys)
+inAppRight prf {xs = []} = prf
+inAppRight prf {xs = (x :: xs)} = There (inAppRight prf)
 
 -- Covering annotation ensures termination checking  
 export
@@ -167,14 +203,15 @@ matches Epsilon str =
 matches (Chr c) str =   
   case str of  
     [] => []  
-    (x :: xs) => if x == c   
-                   then [[c]]  
-                   else []  
+    (x :: xs) => case decEq x c of
+                   Yes _ => [[c]]  
+                   No _ => []  
 matches (Concat r1 r2) str =   
-  [m1 ++ m2 |   
-    (s1, s2) <- splits str,  
-    m1 <- matches r1 s1,  
-    m2 <- matches r2 s2]  
+  concatMap (\(s1, s2) =>  
+    concatMap (\m1 =>  
+      map (\m2 => m1 ++ m2) (matches r2 s2)  
+    ) (matches r1 s1)  
+  ) (splits str)
 matches (Alt r1 r2) str =   
   matches r1 str ++ matches r2 str  
 matches (Star r) str =   
@@ -184,6 +221,21 @@ matches (Star r) str =
     s1 /= [],  -- ensure progress  
     m1 <- matches r s1,  
     m2 <- matches (Star r) s2]  
+
+decEqRefl : (x : Char) -> decEq x x = Yes Refl
+
+
+--leammas
+
+-- Completeness of the matches function
+matchesCompletness : (r : Regex Char) -> (s : List Char) -> lang r s -> Elem s (matches r s)
+matchesCompletness Empty s l impossible
+matchesCompletness Epsilon s l = rewrite l in Here
+matchesCompletness (Chr x) s l = rewrite l in rewrite decEqRefl x in Here
+matchesCompletness (Concat x y) s (((z, w) ** (v, (t, u)))) = ?hf_3
+matchesCompletness (Alt x y) s (Left z) = let rec = matchesCompletness x s z in inAppLeft rec
+matchesCompletness (Alt x y) s (Right z) = let rec = matchesCompletness y s z in inAppRight rec
+matchesCompletness (Star x) s l = ?hf_5
 
 -- Main match function  
 public export
