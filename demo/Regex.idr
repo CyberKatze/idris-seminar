@@ -7,6 +7,7 @@ import Lang
 import Data.List.Quantifiers
 import Data.List.Elem
 import Decidable.Equality 
+import Decidable.Equality.Core
 public export
 data Regex: (a: Type) -> Type where
   Empty: Regex a
@@ -191,6 +192,13 @@ inAppRight : {xs, ys : List a}-> Elem x ys -> Elem x (xs ++ ys)
 inAppRight prf {xs = []} = prf
 inAppRight prf {xs = (x :: xs)} = There (inAppRight prf)
 
+elemSplit : {xs, ys : List a} -> Elem x (xs ++ ys) -> Either (Elem x xs) (Elem x ys)
+elemSplit prf {xs = []} = Right prf 
+elemSplit Here {xs = (x :: xs)} = Left Here
+elemSplit (There y) {xs = (x :: xs)} = case elemSplit y {xs}  of
+                                                      (Left z) => Left (There z)
+                                                      (Right z) => Right z
+
 -- Covering annotation ensures termination checking  
 export
 covering  
@@ -203,9 +211,10 @@ matches Epsilon str =
 matches (Chr c) str =   
   case str of  
     [] => []  
-    (x :: xs) => case decEq x c of
+    ([x]) => case decEq x c of
                    Yes _ => [[c]]  
                    No _ => []  
+    (x1 :: x2 :: xs) => []  
 matches (Concat r1 r2) str =   
   concatMap (\(s1, s2) =>  
     concatMap (\m1 =>  
@@ -237,6 +246,24 @@ matchesCompletness (Alt x y) s (Left z) = let rec = matchesCompletness x s z in 
 matchesCompletness (Alt x y) s (Right z) = let rec = matchesCompletness y s z in inAppRight rec
 matchesCompletness (Star x) s l = ?hf_5
 
+
+-- Soundness of the matches function
+matchesSoundness : (r : Regex Char) -> (s : List Char) -> Elem s (matches r s) -> lang r s
+matchesSoundness Empty s prf = absurd prf
+matchesSoundness Epsilon s prf = case s of 
+                                      [] => Refl
+                                      (x :: xs) => absurd prf 
+matchesSoundness (Chr x) s prf = case s of
+                                      [] => absurd prf
+                                      ([y]) => case decEq y x of
+                                                        (Yes z) => rewrite z in Refl
+                                                        (No contra) => absurd (contra _)
+                                      (x1 :: x2 :: xs) => absurd prf 
+matchesSoundness (Concat x y) s prf = ?ffg_5
+matchesSoundness (Alt x y) s prf = case elemSplit prf of
+                                                  (Left z) => Left (matchesSoundness x s z)
+                                                  (Right z) => Right (matchesSoundness y s z)
+matchesSoundness (Star x) s prf = ?ffg_7
 -- Main match function  
 public export
 match : Regex Char -> List Char -> Bool  
