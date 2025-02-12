@@ -22,8 +22,8 @@ zeroIsEven = ZIsEven
 
 threeIsOdd : Odd (S (S (S Z)))
 
-safeDiv : (num : Nat) -> (d : Nat) -> {auto ok : GT d Z}-> Nat  
-safeDiv n d  = div n d  
+safeDiv : (num : Nat) -> (d : Nat) -> {auto 0 ok : GT d Z}-> Nat  
+safeDiv n d = ?hole
 
 -- This works automatically because Idris can prove 0 < 5  
 example : Nat  
@@ -40,29 +40,6 @@ index' (FS k) (x :: xs) = index' k xs
 
 -- Regular expression
 
-
-regexB : Regex
-regexB = Chr 'b'
-
-proofSingleChar : C.Match (Chr 'b') ['b']
-proofSingleChar = MChr 'b' 
-
-length_append : (xs : Vect n a) -> (ys : Vect m a) -> length (xs ++ ys) = (length xs) + (length ys)
-length_append [] ys = Refl
-length_append (x :: xs) ys = let rec = Main.length_append xs ys in rewrite rec in Refl 
-
-proofConcat: C.Match (Concat (Chr 'a') (Chr 'b')) ['a', 'b']
-proofConcat = ?h1 
-
-
-regexABStar : Regex
-regexABStar = Concat (Chr 'a') (Star (Chr 'b'))
-
-
-proofAltLeft : C.Match (Alt (Chr 'a') (Chr 'b')) ['a'] 
-proofAltLeft  = MAltL (MChr 'a')
-
-
 main : IO ()
 main = do
   putStrLn "is regexA matching 'a'? using boolean match?" 
@@ -72,8 +49,14 @@ main = do
   case res of
       Left err => putStrLn $ "Error: " ++ err
       Right reg => do
-        print $ match reg "abbbb"
+        print $ match reg (unpack "abbbbc")
 
-regexABStarC : Regex
-regexABStarC = Concat (Star (Concat (Chr 'a') (Chr 'b'))) (Chr 'c')
-is_match = match regexABStarC "ababw"
+
+
+
+
+
+
+vzipWith : (a -> b -> c) -> Vect n a -> Vect n b -> Vect n c
+vzipWith f [] ys = []
+vzipWith f (x :: xs) ys = ?vzipWit_1

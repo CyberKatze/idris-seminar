@@ -9,6 +9,7 @@ import Data.List.Quantifiers
 import Data.List.Elem
 import Decidable.Equality 
 import Decidable.Equality.Core
+import Prelude
 public export
 data Regex: (a: Type) -> Type where
   Empty: Regex a
@@ -209,14 +210,15 @@ mutual
   match (Alt r1 r2) str =   
     match r1 str || match r2 str  
   match (Star r) [] =  True
-  match (Star r) str =
-    matchConcatList r (Star r) (splits str) False 
+  match (Star r) (x::xs) =
+    matchConcatList r (Star r) (appendFirst x (splits xs)) False 
 
 exampleRegex : Regex Char
 exampleRegex = Star (Concat (Chr 'a') (Chr 'b'))
 
 decEqRefl : (x : Char) -> decEq x x = Yes Refl
-singeltonEq :{x, y : Char} ->  Prelude.Basics.(::) x [] = y :: [] -> x == y = True
+singletonEq :{x, y : Char} ->  Prelude.Basics.(::) x [] = y :: [] -> x == y = True
+singletonEqRev :{x, y : Char} -> x == y = True -> Prelude.Basics.(::) x [] = y :: [] 
 
 --leammas
 
@@ -229,45 +231,53 @@ splitsMatch {s= ((ns1, ns2) :: xs) } (There y) prf2 = let rec = splitsMatch y pr
 
 -- Completeness of the match function
 matchCompletness : (r : Regex Char) -> (s : List Char) -> lang r s -> match r s = True
-matchCompletness Empty s l impossible
-matchCompletness Epsilon s l = rewrite l in Refl
-matchCompletness (Chr x) [] l impossible
-matchCompletness (Chr x) ([y]) l = rewrite singeltonEq l in Refl
+matchCompletness Empty s l  = absurd l
+matchCompletness Epsilon s prf = rewrite prf in Refl
+matchCompletness (Chr x) [] l = ?ddfdf
+matchCompletness (Chr x) ([y]) prf = rewrite singletonEq prf in Refl
 matchCompletness (Chr x) (x1 :: x2 :: xs) l impossible 
-matchCompletness (Concat x y) s (((z, w) ** (v, (t, u)))) = let rec1 = matchCompletness x z t
-                                                                rec2 = matchCompletness y w u 
-                                                                temp = trans (cong (&& (match y w)) rec1 ) rec2
-                                                                lem = sym (splitsMatch (splitElem z w v) temp) in rewrite lem in Refl
 matchCompletness (Alt x y) s (Left z) = let rec = matchCompletness x s z in rewrite rec in Refl 
 matchCompletness (Alt x y) s (Right z) = let rec = matchCompletness y s z in rewrite rec in rewrite orTrueTrue (match x s) in Refl 
+matchCompletness (Concat x y) s (((z, w) ** (v, (t, u)))) = 
+  let rec1 = matchCompletness x z t
+      rec2 = matchCompletness y w u 
+      temp = trans (cong (&& (match y w)) rec1 ) rec2
+      lem = sym (splitsMatch (splitElem z w v) temp) in rewrite lem 
+      in Refl
 matchCompletness (Star r) s (([] ** (y, z))) =  rewrite y in Refl
 matchCompletness (Star r) [] (xs ** (z, ws)) = Refl 
-matchCompletness (Star r) (y :: ys) (((x :: xs) ** (z, w::ws))) = let rec = matchCompletness (Star r) (foldr (++) [] xs) (xs ** (Refl, ws) )
-                                                                      rec1 = matchCompletness r x w
-                                                                      splitPrf = splitElem x (foldr (++) [] xs) z
-                                                                      temp = trans (cong (&& (match (Star r) (foldr (++) [] xs))) rec1) rec
-                                                                      spp = splitsMatch splitPrf temp 
-                                                                      in spp 
+matchCompletness (Star r) (y :: ys) (((x::xs) ** (z, w::ws))) = 
+  let rec = matchCompletness (Star r) (foldr (++) [] xs) (xs ** (Refl, ws) )
+      rec1 = matchCompletness r x w
+      There (splitPrf) = splitElem x (foldr (++) [] xs) z
+      temp = trans (cong (&& (match (Star r) (foldr (++) [] xs))) rec1) rec
+      spp = splitsMatch splitPrf temp 
+      in spp 
+matchCompletness (Star r) (y :: ys) (([] ** (z, ws))) = absurd z
+matchCompletness (Star r) (y :: ys) (((x :: xs) ** (z, []))) impossible
 matchCompletness (Star r) (y :: ys) ((xs ** (z, ws))) impossible
 
 
--- Soundness of the matches function
--- matchesSoundness : (r : Regex Char) -> (s : List Char) -> Elem s (matches r s) -> lang r s
--- matchesSoundness Empty s prf = absurd prf
--- matchesSoundness Epsilon s prf = case s of 
---                                       [] => Refl
---                                       (x :: xs) => absurd prf 
--- matchesSoundness (Chr x) s prf = case s of
---                                       [] => absurd prf
---                                       ([y]) => case decEq y x of
---                                                         (Yes z) => rewrite z in Refl
---                                                         (No contra) => absurd (contra ?ddw)
---                                       (x1 :: x2 :: xs) => absurd prf 
--- matchesSoundness (Concat x y) s prf = ?ffg_5
--- matchesSoundness (Alt x y) s prf = case elemSplit prf of
---                                                   (Left z) => Left (matchesSoundness x s z)
---                                                   (Right z) => Right (matchesSoundness y s z)
--- matchesSoundness (Star x) s prf = ?ffg_7
+
+matchSoundness : (r : Regex Char) -> (s : List Char) -> (match r s) = True -> lang r s
+matchSoundness Empty s prf = absurd prf
+matchSoundness Epsilon s prf = case s of
+                                      [] => Refl
+                                      (x :: xs) => absurd prf
+matchSoundness (Chr x) s prf = case s of
+                                      [] => absurd prf
+                                      ([y]) => singletonEqRev prf
+                                      (x1 :: x2 :: xs) => absurd prf 
+matchSoundness (Alt x y) s prf = case decEq (match x s) True of
+                                      (Yes z) => let rec = matchSoundness x s z  in Left rec
+                                      (No contra_x) => case decEq (match y s) True of 
+                                                          (Yes z) => let rec = matchSoundness y s z in Right rec
+                                                          (No contra_y) => let mx = notTrueIsFalse contra_x 
+                                                                               my = notTrueIsFalse contra_y 
+                                                                               temp = sym (trans (cong (|| match y s) mx) my)
+                                                                              in absurd (trans temp prf)
+matchSoundness (Concat x y) s prf = ?ffg_5
+matchSoundness (Star x) s prf = ?ffg_7
 -- Main match function  
 
 -- namespace C
