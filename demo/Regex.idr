@@ -1,6 +1,7 @@
 module Regex
 
 import Data.List
+import Data.Bool
 import Data.String
 import Data.Vect
 import Lang
@@ -28,114 +29,97 @@ lang (Star x) = langStar (lang x)
 covering
 simplify : Regex a -> Regex a
 simplify (Concat Empty r) = Empty  
-simplify (Concat r Empty) = Empty  
 simplify (Concat Epsilon r ) = r  
-simplify (Concat r Epsilon ) = r  
-simplify (Alt Empty r) = r  
-simplify (Alt r Empty) = r  
+simplify (Concat r Empty) = Empty
+simplify (Concat r Epsilon ) = r 
+simplify (Alt Empty r) = r
+simplify (Alt r Empty) = r
 simplify r =  r  
 
+covering
 simplifyCorrect : (r : Regex a) -> (s : List a) ->  lang r s -> lang (simplify r) s   
-simplifyCorrect Empty s l = l 
-simplifyCorrect Epsilon s l = l 
-simplifyCorrect (Chr x) s l = l 
-simplifyCorrect (Star x) s l = l 
-simplifyCorrect (Concat Empty y) s (((x, z) ** (w, (v, t)))) = v
-simplifyCorrect (Concat Epsilon Empty) s (((x, y) ** (z, (w, v)))) = v 
-simplifyCorrect (Concat Epsilon Epsilon) s (((x, y) ** (z, (w, v)))) = 
-  let prf_1 = cong (++ y) w 
-      prf_2 = trans (trans z prf_1) v 
-      in prf_2 
-simplifyCorrect (Concat Epsilon (Chr x)) s (((y, z) ** (w, (v, t)))) = 
-  let prf_1 = cong (++ z) v  
-      prf_2 = trans (trans w prf_1) t
-      in prf_2 
-simplifyCorrect (Concat Epsilon (Concat x y)) s (((z, w) ** (v, (t, u)))) = 
-  let prf_1 = cong (++ w) t 
-      prf_2 = (trans v prf_1) 
-      in rewrite prf_2 in u 
-simplifyCorrect (Concat Epsilon (Alt x y)) s (((z, w) ** (v, (t, u)))) = 
-  let prf_1 = cong (++ w) t
-      prf_2 = trans v prf_1
-      in rewrite prf_2 in u 
-simplifyCorrect (Concat Epsilon (Star x)) s (((y, z) ** (w, (v, t)))) = 
-  let prf_1 = cong (++ z) v
-      prf_2 = trans w prf_1
-      in rewrite prf_2 in t 
+simplifyCorrect (Concat Empty r) s (((x, z) ** (w, (v, t)))) = v
+simplifyCorrect (Concat Epsilon r) s (((x, y) ** (z, (w, v)))) = 
+  let prf_1 = cong (++ y) w  
+      prf_2 = trans z prf_1
+      in  rewrite prf_2 in v 
 simplifyCorrect (Concat (Chr x) Empty) s (((y, z) ** (w, (v, t)))) = t 
+simplifyCorrect (Concat (Concat x z) Empty) s (((y, w) ** (v, (t, u)))) = u 
+simplifyCorrect (Concat (Alt x z) Empty) s (((y, w) ** (v, (t, u)))) = u 
+simplifyCorrect (Concat (Star x) Empty) s (((y, z) ** (w, (v, t)))) = t 
 simplifyCorrect (Concat (Chr x) Epsilon) s (((y, z) ** (w, (v, t)))) =
   let prf_1 = cong (y ++) t
       prf_2 = trans w prf_1
       prf_3 = appendNilRightNeutral y 
       prf_4 = trans (trans prf_2 prf_3) v
       in prf_4
-simplifyCorrect (Concat (Chr x) (Chr y)) s l = l 
-simplifyCorrect (Concat (Chr x) (Concat y z)) s l = l 
-simplifyCorrect (Concat (Chr x) (Alt y z)) s l = l 
-simplifyCorrect (Concat (Chr x) (Star y)) s l = l 
-simplifyCorrect (Concat (Concat x z) Empty) s (((y, w) ** (v, (t, u)))) = u 
 simplifyCorrect (Concat (Concat x z) Epsilon) s (((y, w) ** (v, (t, u)))) = 
   let prf_1 = cong (y ++) u
       prf_2 = trans v prf_1
       prf_3 = appendNilRightNeutral y 
       prf_4 = trans prf_2 prf_3 
   in rewrite prf_4 in t 
-simplifyCorrect (Concat (Concat x z) (Chr y)) s l = l 
-simplifyCorrect (Concat (Concat x z) (Concat y w)) s l = l 
-simplifyCorrect (Concat (Concat x z) (Alt y w)) s l = l 
-simplifyCorrect (Concat (Concat x z) (Star y)) s l = l 
-simplifyCorrect (Concat (Alt x z) Empty) s (((y, w) ** (v, (t, u)))) = u 
 simplifyCorrect (Concat (Alt x z) Epsilon) s (((y, w) ** (v, (t, u)))) = 
   let prf_1 = cong (y ++) u
       prf_2 = appendNilRightNeutral y
       prf_3 = trans (trans v prf_1) prf_2
   in rewrite prf_3 in t 
-simplifyCorrect (Concat (Alt x z) (Chr y)) s l = l 
-simplifyCorrect (Concat (Alt x z) (Concat y w)) s l = l 
-simplifyCorrect (Concat (Alt x z) (Alt y w)) s l = l 
-simplifyCorrect (Concat (Alt x z) (Star y)) s l = l 
-simplifyCorrect (Concat (Star x) Empty) s (((y, z) ** (w, (v, t)))) = t 
 simplifyCorrect (Concat (Star x) Epsilon) s (((y, z) ** (w, (v, t)))) = 
   let prf_1 = cong (y ++ ) t
       prf_2 = appendNilRightNeutral y
       prf_3 = trans (trans w prf_1) prf_2
   in rewrite prf_3 in v
+simplifyCorrect (Alt Empty r) s l = either absurd id l  
+simplifyCorrect (Alt Epsilon Empty) s l = either id absurd l
+simplifyCorrect (Alt (Chr x) Empty) s l = either id absurd l
+simplifyCorrect (Alt (Concat x z) Empty) s l = either id absurd l 
+simplifyCorrect (Alt (Alt x z) Empty) s l = either id absurd l 
+simplifyCorrect (Alt (Star x) Empty) s l = either id absurd l 
+simplifyCorrect Empty s l = l 
+simplifyCorrect Epsilon s l = l 
+simplifyCorrect (Chr x) s l = l 
+simplifyCorrect (Concat (Chr x) (Chr y)) s l = l 
+simplifyCorrect (Concat (Chr x) (Concat y z)) s l = l 
+simplifyCorrect (Concat (Chr x) (Alt y z)) s l = l 
+simplifyCorrect (Concat (Chr x) (Star y)) s l = l 
+simplifyCorrect (Concat (Concat x z) (Chr y)) s l = l 
+simplifyCorrect (Concat (Concat x z) (Concat y w)) s l = l 
+simplifyCorrect (Concat (Concat x z) (Alt y w)) s l = l 
+simplifyCorrect (Concat (Concat x z) (Star y)) s l = l 
+simplifyCorrect (Concat (Alt x z) (Chr y)) s l = l 
+simplifyCorrect (Concat (Alt x z) (Concat y w)) s l = l 
+simplifyCorrect (Concat (Alt x z) (Alt y w)) s l = l 
+simplifyCorrect (Concat (Alt x z) (Star y)) s l = l 
 simplifyCorrect (Concat (Star x) (Chr y)) s l = l 
 simplifyCorrect (Concat (Star x) (Concat y z)) s l = l 
 simplifyCorrect (Concat (Star x) (Alt y z)) s l = l 
 simplifyCorrect (Concat (Star x) (Star y)) s l = l 
-simplifyCorrect (Alt Empty y) s Left x impossible
-simplifyCorrect (Alt Empty y) s (Right x) = x  
-simplifyCorrect (Alt Epsilon Empty) s l = either id absurd l --also we could use case split and impossible
 simplifyCorrect (Alt Epsilon Epsilon) s l = l 
 simplifyCorrect (Alt Epsilon (Chr x)) s l = l 
 simplifyCorrect (Alt Epsilon (Concat x y)) s l = l 
 simplifyCorrect (Alt Epsilon (Alt x y)) s l = l 
 simplifyCorrect (Alt Epsilon (Star x)) s l = l 
-simplifyCorrect (Alt (Chr x) Empty) s l = either id absurd l
 simplifyCorrect (Alt (Chr x) Epsilon) s l = l 
 simplifyCorrect (Alt (Chr x) (Chr y)) s l = l 
 simplifyCorrect (Alt (Chr x) (Concat y z)) s l = l 
 simplifyCorrect (Alt (Chr x) (Alt y z)) s l = l 
 simplifyCorrect (Alt (Chr x) (Star y)) s l = l 
-simplifyCorrect (Alt (Concat x z) Empty) s l = either id absurd l 
 simplifyCorrect (Alt (Concat x z) Epsilon) s l = l 
 simplifyCorrect (Alt (Concat x z) (Chr y)) s l = l 
 simplifyCorrect (Alt (Concat x z) (Concat y w)) s l = l 
 simplifyCorrect (Alt (Concat x z) (Alt y w)) s l = l 
 simplifyCorrect (Alt (Concat x z) (Star y)) s l = l 
-simplifyCorrect (Alt (Alt x z) Empty) s l = either id absurd l 
 simplifyCorrect (Alt (Alt x z) Epsilon) s l = l 
 simplifyCorrect (Alt (Alt x z) (Chr y)) s l = l 
 simplifyCorrect (Alt (Alt x z) (Concat y w)) s l = l 
 simplifyCorrect (Alt (Alt x z) (Alt y w)) s l = l 
 simplifyCorrect (Alt (Alt x z) (Star y)) s l = l 
-simplifyCorrect (Alt (Star x) Empty) s l = either id absurd l 
 simplifyCorrect (Alt (Star x) Epsilon) s l = l 
 simplifyCorrect (Alt (Star x) (Chr y)) s l = l 
 simplifyCorrect (Alt (Star x) (Concat y z)) s l = l 
 simplifyCorrect (Alt (Star x) (Alt y z)) s l = l 
 simplifyCorrect (Alt (Star x) (Star y)) s l = l 
+simplifyCorrect (Star x) s l = l 
 
 
 public export  
@@ -153,9 +137,14 @@ Show (Regex Char) where
 
 
 -- Helper function for string splits  
-splits : List Char -> List (List Char, List Char)
-splits [] = [([],[])]
-splits (x :: xs) = ([], x :: xs) :: (map (\(ys, zs) => (x :: ys, zs)) (splits xs))
+mutual 
+  splits : List Char -> List (List Char, List Char)
+  splits [] = [([],[])]
+  splits (x :: xs) = ([], x :: xs) :: appendFirst x (splits xs)
+
+  appendFirst : (a : Char) -> List (List Char, List Char) -> List (List Char, List Char)
+  appendFirst a [] = []
+  appendFirst a ((x, y) :: xs) = (a:: x, y) :: appendFirst a xs
 
 mapElem : {a, b : Type} ->
 (f : a -> b) ->
@@ -172,15 +161,18 @@ splitRightNil [] = Here
 splitRightNil (x :: xs) = ?eeef
 
 
+splitLemma : {xs, ws : List Char} -> (x : Char) ->   
+             Elem (xs, ws) (splits (xs ++ ws)) ->   
+             Elem (x :: xs, ws) (appendFirst x (splits (xs ++ ws)))  
+splitLemma x prf = ?dfdfd
 
 splitElem : {s : List Char} ->
 (z, w : List Char) ->
 (p : s = z ++ w) ->
 Elem (z, w) (splits s)
-splitElem {s = ([] ++ _)} [] [] Refl = Here 
-splitElem {s = ([] ++ _)} [] (x :: xs) Refl = Here 
-splitElem {s = ((_ :: _) ++ [])} (x :: xs) [] Refl =  splitRightNil _ 
-splitElem {s = s} (x :: xs) (y :: ys) prf = ?herere_3 
+splitElem [] [] prf  =  rewrite prf in Here 
+splitElem [] (w :: ws) prf  =  rewrite prf in Here 
+splitElem (x :: xs) w prf  = rewrite prf in  let rec = splitLemma x (splitElem xs w Refl) in  (There rec)
 
 -- lemmma
 inAppLeft : {xs, ys : List a}-> Elem x xs -> Elem x (xs ++ ys)
@@ -198,76 +190,85 @@ elemSplit Here {xs = (x :: xs)} = Left Here
 elemSplit (There y) {xs = (x :: xs)} = case elemSplit y {xs}  of
                                                       (Left z) => Left (There z)
                                                       (Right z) => Right z
+mutual 
+  matchConcatList : (r1 : Regex Char) -> (r2 : Regex Char) -> (s : List (List Char, List Char)) -> Bool -> Bool
+  matchConcatList r1 r2 [] acc = acc
+  matchConcatList r1 r2 ((s1, s2) :: xs) acc = (match r1 s1 && (match r2 s2)) || (matchConcatList r1 r2 xs acc)
+  -- Covering annotation ensures termination checking  
+  export
+  covering  
+  match : Regex Char -> List Char -> Bool
+  match Empty str = False
+  match Epsilon [] = True
+  match Epsilon _ = False
+  match (Chr c) [] = False
+  match (Chr c) [x] = x == c
+  match (Chr c) (x1 :: x2 :: xs) = False
+  match (Concat r1 r2) str =   
+    matchConcatList r1 r2 (splits str) False
+  match (Alt r1 r2) str =   
+    match r1 str || match r2 str  
+  match (Star r) [] =  True
+  match (Star r) str =
+    matchConcatList r (Star r) (splits str) False 
 
--- Covering annotation ensures termination checking  
-export
-covering  
-matches : Regex Char -> List Char -> List (List Char)  
-matches Empty str = []
-matches Epsilon str =   
-  case str of  
-    [] => [[]]   
-    _ =>  []  
-matches (Chr c) str =   
-  case str of  
-    [] => []  
-    ([x]) => case decEq x c of
-                   Yes _ => [[c]]  
-                   No _ => []  
-    (x1 :: x2 :: xs) => []  
-matches (Concat r1 r2) str =   
-  concatMap (\(s1, s2) =>  
-    concatMap (\m1 =>  
-      map (\m2 => m1 ++ m2) (matches r2 s2)  
-    ) (matches r1 s1)  
-  ) (splits str)
-matches (Alt r1 r2) str =   
-  matches r1 str ++ matches r2 str  
-matches (Star r) str =   
-  [] :: -- empty match  
-  [m1 ++ m2 |   
-    (s1, s2) <- splits str,  
-    s1 /= [],  -- ensure progress  
-    m1 <- matches r s1,  
-    m2 <- matches (Star r) s2]  
+exampleRegex : Regex Char
+exampleRegex = Star (Concat (Chr 'a') (Chr 'b'))
 
 decEqRefl : (x : Char) -> decEq x x = Yes Refl
-
+singeltonEq :{x, y : Char} ->  Prelude.Basics.(::) x [] = y :: [] -> x == y = True
 
 --leammas
 
--- Completeness of the matches function
-matchesCompletness : (r : Regex Char) -> (s : List Char) -> lang r s -> Elem s (matches r s)
-matchesCompletness Empty s l impossible
-matchesCompletness Epsilon s l = rewrite l in Here
-matchesCompletness (Chr x) s l = rewrite l in rewrite decEqRefl x in Here
-matchesCompletness (Concat x y) s (((z, w) ** (v, (t, u)))) = ?hf_3
-matchesCompletness (Alt x y) s (Left z) = let rec = matchesCompletness x s z in inAppLeft rec
-matchesCompletness (Alt x y) s (Right z) = let rec = matchesCompletness y s z in inAppRight rec
-matchesCompletness (Star x) s l = ?hf_5
+splitsMatch: {s : List (List Char , List Char) }-> Elem (s1, s2) s -> match r1 s1 && match r2 s2 = True -> matchConcatList r1 r2 s False = True
+splitsMatch {s= [] } prf prf2 impossible
+splitsMatch {s= ((s1, s2) :: xs) } Here prf2 = rewrite prf2 in Refl
+splitsMatch {s= ((ns1, ns2) :: xs) } (There y) prf2 = let rec = splitsMatch y prf2 
+                                                          temp = trans (cong ((match r1 ns1 && match r2 ns2) ||) rec) (orTrueTrue _ ) in rewrite sym temp in Refl 
+
+
+-- Completeness of the match function
+matchCompletness : (r : Regex Char) -> (s : List Char) -> lang r s -> match r s = True
+matchCompletness Empty s l impossible
+matchCompletness Epsilon s l = rewrite l in Refl
+matchCompletness (Chr x) [] l impossible
+matchCompletness (Chr x) ([y]) l = rewrite singeltonEq l in Refl
+matchCompletness (Chr x) (x1 :: x2 :: xs) l impossible 
+matchCompletness (Concat x y) s (((z, w) ** (v, (t, u)))) = let rec1 = matchCompletness x z t
+                                                                rec2 = matchCompletness y w u 
+                                                                temp = trans (cong (&& (match y w)) rec1 ) rec2
+                                                                lem = sym (splitsMatch (splitElem z w v) temp) in rewrite lem in Refl
+matchCompletness (Alt x y) s (Left z) = let rec = matchCompletness x s z in rewrite rec in Refl 
+matchCompletness (Alt x y) s (Right z) = let rec = matchCompletness y s z in rewrite rec in rewrite orTrueTrue (match x s) in Refl 
+matchCompletness (Star r) s (([] ** (y, z))) =  rewrite y in Refl
+matchCompletness (Star r) [] (xs ** (z, ws)) = Refl 
+matchCompletness (Star r) (y :: ys) (((x :: xs) ** (z, w::ws))) = let rec = matchCompletness (Star r) (foldr (++) [] xs) (xs ** (Refl, ws) )
+                                                                      rec1 = matchCompletness r x w
+                                                                      splitPrf = splitElem x (foldr (++) [] xs) z
+                                                                      temp = trans (cong (&& (match (Star r) (foldr (++) [] xs))) rec1) rec
+                                                                      spp = splitsMatch splitPrf temp 
+                                                                      in spp 
+matchCompletness (Star r) (y :: ys) ((xs ** (z, ws))) impossible
 
 
 -- Soundness of the matches function
-matchesSoundness : (r : Regex Char) -> (s : List Char) -> Elem s (matches r s) -> lang r s
-matchesSoundness Empty s prf = absurd prf
-matchesSoundness Epsilon s prf = case s of 
-                                      [] => Refl
-                                      (x :: xs) => absurd prf 
-matchesSoundness (Chr x) s prf = case s of
-                                      [] => absurd prf
-                                      ([y]) => case decEq y x of
-                                                        (Yes z) => rewrite z in Refl
-                                                        (No contra) => absurd (contra _)
-                                      (x1 :: x2 :: xs) => absurd prf 
-matchesSoundness (Concat x y) s prf = ?ffg_5
-matchesSoundness (Alt x y) s prf = case elemSplit prf of
-                                                  (Left z) => Left (matchesSoundness x s z)
-                                                  (Right z) => Right (matchesSoundness y s z)
-matchesSoundness (Star x) s prf = ?ffg_7
+-- matchesSoundness : (r : Regex Char) -> (s : List Char) -> Elem s (matches r s) -> lang r s
+-- matchesSoundness Empty s prf = absurd prf
+-- matchesSoundness Epsilon s prf = case s of 
+--                                       [] => Refl
+--                                       (x :: xs) => absurd prf 
+-- matchesSoundness (Chr x) s prf = case s of
+--                                       [] => absurd prf
+--                                       ([y]) => case decEq y x of
+--                                                         (Yes z) => rewrite z in Refl
+--                                                         (No contra) => absurd (contra ?ddw)
+--                                       (x1 :: x2 :: xs) => absurd prf 
+-- matchesSoundness (Concat x y) s prf = ?ffg_5
+-- matchesSoundness (Alt x y) s prf = case elemSplit prf of
+--                                                   (Left z) => Left (matchesSoundness x s z)
+--                                                   (Right z) => Right (matchesSoundness y s z)
+-- matchesSoundness (Star x) s prf = ?ffg_7
 -- Main match function  
-public export
-match : Regex Char -> List Char -> Bool  
-match r str = elem str (matches r str)
 
 -- namespace C
 --   public export

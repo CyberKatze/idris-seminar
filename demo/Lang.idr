@@ -59,6 +59,7 @@ public export
 langConcat: {a: Type} -> Lang a -> Lang a -> Lang a  
 langConcat l1 l2 w = exists (\ (w1 , w2) => Pair (w = w1 ++ w2) (Pair (l1 w1) (l2 w2)))
 
+public export
 concat: {a: Type} -> List (List a )-> List a
 concat = foldr (++) []
 
