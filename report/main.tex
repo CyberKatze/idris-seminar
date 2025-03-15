@@ -431,13 +431,14 @@ In this section, we aim to prove the correctness of a simple regular expression 
 We define the regular expression type using algebraic data types as follows:
 
 \begin{idris}
-data Regex: (a: Type) -> Type where
-  Empty: Regex a
-  Epsilon: Regex a
-  Chr : a -> Regex a
-  Concat: Regex a -> Regex a -> Regex a
-  Alt:  Regex a -> Regex a -> Regex a
-  Star :  Regex a -> Regex a
+data Regex : (a : Type) -> Type where
+  Empty   : Regex a
+  Epsilon : Regex a
+  Chr     : a -> Regex a
+  Concat  : Regex a -> Regex a -> Regex a
+  Alt     : Regex a -> Regex a -> Regex a
+  Star    : Regex a -> Regex a
+  
 \end{idris}
 
 Our regular expression can be defined for alphabets (values) of any type \( a \). For simplicity, we will use \( \texttt{Char} \) in this example. The type signature for the match function is as follows:
