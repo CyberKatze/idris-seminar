@@ -46,6 +46,9 @@
 \usepackage{hyperref}
 \setlength{\footnotesep}{10pt}
 
+
+
+
 % Defines default styling for code listings
 \definecolor{gray_ulisses}{gray}{0.55}
 \definecolor{green_ulises}{rgb}{0.2,0.75,0}
@@ -155,7 +158,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{abstract}
-Idris2 is a functional programming language that utilizes Quantitative Type Theory (QTT) to provide an advanced dependent type system. This system enhances both practical software development and formal proof verification by allowing developers to express complex specifications and ensure program correctness at compile time. This report explores the capabilities of Idris2 through a verification example, highlighting its unique features and advantages, and concludes with key insights into its potential applications and challenges.
+Idris2 is a dependently-typed functional programming language designed to facilitate formal verification and program correctness through its expressive type system. By leveraging dependent types, Idris2 enables developers to encode precise specifications directly within the type system, catching potential errors at compile time.This report explores Idris2’s capabilities through a verification example, examining its approach to theorem proving and interactive development. We discuss its strengths in formal verification, as well as challenges related to proof complexity and usability.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -163,11 +166,11 @@ Idris2 is a functional programming language that utilizes Quantitative Type Theo
 \section{Introduction}
 \label{sec:introduction}
 
-As software systems become increasingly complex and integral to our daily lives, the demand for programming languages that ensure reliability and correctness has grown significantly. Idris2 represents a major advancement in this area by offering a unique approach to program correctness through its type system, which is based on Quantitative Type Theory (QTT).
 
-Idris2 is a pure functional programming language that treats types as first-class citizens, allowing them to be manipulated and computed like any other value. This capability fundamentally shifts the way we approach programming, enabling developers to work collaboratively with the compiler. The compiler acts as an assistant during development, helping to prove properties about the code and suggesting potential solutions for incomplete programs.
 
-This type-driven development approach ensures program correctness before execution, making Idris2 particularly valuable for critical systems, mathematical proofs, and complex state-dependent applications such as concurrent systems \cite{BradyYoutube2023}. For example, Idris2 can enforce safety in division operations, as demonstrated below:
+Idris2 is a pure functional programming language that treats types as first-class citizens, allowing them to be manipulated and computed like any other value. By treating types as first-class entities, Idris2 enables developers to encode correctness properties in a way that can be checked at compile time, with compiler acts as an assistant during development, reducing certain classes of runtime errors.
+
+This type-driven development approach ensures program correctness before execution, making Idris2 particularly valuable for critical systems, mathematical proofs, and complex state-dependent applications such as concurrent systems \cite{brady2021idris}. For example, Idris2 can enforce safety in division operations, as demonstrated below:
 
 \begin{idris}
 safeDiv : (num : Nat) -> (d : Nat) -> {auto ok : GT d Z} -> Nat  
@@ -180,20 +183,20 @@ example2 : Nat
 example2 = safeDiv 12 0
 \end{idris}
 
-In this example, the `safeDiv` function ensures that division by zero is prevented at compile time. The `example` variable compiles successfully because it divides 12 by 5, a valid operation. However, `example2` will result in a compile-time error because it attempts to divide by zero, which violates the constraint enforced by the `GT d Z` condition. This demonstrates Idris2's ability to catch potential runtime errors during compilation.
+In this example, the safeDiv function is designed to prevent division by zero by enforcing a compile-time constraint on its second argument. The type {auto ok : GT d Z} ensures that d must be strictly greater than zero for the function to type-check. The `example` variable compiles successfully because it divides 12 by 5, a valid operation. However, `example2` will result in a compile-time error because it attempts to divide by zero, which violates the constraint enforced by the `GT d Z` condition. This demonstrates Idris2's ability to catch potential runtime errors during compilation.
 
-In the subsequent sections, this report explores several key aspects of Idris2. We begin with a brief overview of the language's background and its evolution from Idris 1 to Idris 2. Next, we delve into the theoretical underpinnings of dependent types, focusing on propositions, judgments, and equality in Idris2. We then discuss the features of Idris2, including Quantitative Type Theory (QTT), multiplicities, and linearity, which enable more precise resource management and control over side effects. Following this, we highlight Idris2's interactive development environment, which supports type-driven development and interactive editing features. We also demonstrate a verification example using Idris2 to show its practical application in formal verification. Finally, we share insights on what Idris2 offers and the challenges we faced during the verification process.
+In the subsequent sections, this report explores several key aspects of Idris2. We begin with a brief overview of the language's background \ref{sec:background} and its evolution from Idris 1 to Idris 2. Next, we delve into the theoretical underpinnings of dependent types, focusing on propositions, judgments, and equality \ref{sec:Equality} in Idris2. We then discuss the features of Idris2 \ref{sec:features}, including Quantitative Type Theory (QTT) \ref{sec:qtt}, which formalizes resource usage in Idris2 through concepts like multiplicities \ref{sec:multiplicities}. Following this, we highlight Idris2's interactive development environment \ref{sec:interactive-development-environment} which facilitates type-driven development through features such as hole-driven programming, case splitting, and proof search. To illustrate its practical application in formal verification, we present a verification example \ref{sec:verification-example} using Idris2. Finally, we discuss the challenges encountered during the verification process and the broader implications of Idris2’s approach to correctness \ref{sec:implementation-and-proof}.
 
 \section{Background}  
 \label{sec:background}  
 
 Programming languages have traditionally separated types and values, which means that certain errors, particularly those related to invalid values or incorrect data structures, are only caught at runtime. This limitation has posed a significant challenge in software engineering, as it allows many types of errors—such as accessing an element from an empty list—to slip through until the program is executed. The goal of dependent types is to address this problem by allowing types to depend on values, enabling the type system itself to enforce correctness at compile time.
 
-The concept of dependent types is not new; it has roots in mathematical logic and type theory. However, its application in programming languages was limited for many years. Idris, first introduced by Edwin Brady in 2009, was a pioneering language that sought to make dependent types practical and usable in real-world programming. Idris was designed with the goal of enabling programmers to capture more precise specifications in the type system itself, making programs both more expressive and safer. Through its use of dependent types, Idris allowed for the formal verification of certain aspects of a program at compile time—such as proving that a vector is non-empty before calling the head function.
+The concept of dependent types is not new; it has roots in mathematical logic and type theory \cite{martin-lof1984}. However, its application in programming languages was limited for many years. Idris, first introduced by Edwin Brady in 2009, was a pioneering language that sought to make dependent types practical and usable in real-world programming \cite{brady2013idris}. Through its use of dependent types, Idris allowed for the formal verification of certain aspects of a program at compile time—such as proving that a list is non-empty before calling the head function.
 
 Despite its potential, Idris 1 had its limitations. The performance of type checking was not optimal for large programs, and the language's implementation and theoretical foundations were not as robust as they could be. These shortcomings were particularly evident when trying to use Idris for large-scale or more complex applications. The need for improvement in both usability and performance led to the development of Idris 2.
 
-Idris 2 represents a complete redesign of the language, drawing on the lessons learned from Idris 1. One of the key challenges in the original Idris was the efficiency of type checking, especially when dealing with large programs. Idris 2 addressed this by significantly improving its type checking performance. Furthermore, the language introduced the ability to erase compile-time arguments more effectively, reducing the overhead in generating executable code. Additionally, Idris 2 incorporated linear types through Quantitative Type Theory, providing a mechanism for better resource management and more precise control over side effects in functional programming.
+Idris 2 represents a complete redesign of the language, drawing on the lessons learned from Idris 1. One of the key challenges in the original Idris was the efficiency of type checking, especially when dealing with large programs. Idris 2 improves type checking performance compared to its predecessor by optimizing evaluation strategies. Furthermore, the language enhances compile-time argument erasure, reducing the overhead of generated executable code. Additionally, Idris 2 incorporates linear types as part of Quantitative Type Theory (QTT), providing a mechanism for better resource management and more precise control over side effects in functions.
 
 These improvements have made Idris 2 a more practical and scalable tool for developers looking to leverage dependent types.
   
@@ -202,38 +205,44 @@ These improvements have made Idris 2 a more practical and scalable tool for deve
 \label{sec:Propositions and judgments}
 
 \subsection{Propositions and Judgments}
-Before delving into theorem proving, it is essential to understand the foundational framework of constructive logic. Also known as intuitionistic logic, constructive logic differs from classical logic by rejecting the Law of Excluded Middle, which asserts that every proposition is either true or false. Instead, constructive logic considers a proposition true only if it can be explicitly proven. Thus, an unproven proposition is not necessarily false; it may simply be unprovable.
+Before discussing theorem proving, we must first understand some fundamental concepts. A proposition is a statement that can be proven. Before proving it, we cannot formally determine whether it is true. A successful proof serves as evidence that establishes the proposition’s validity. In functional programming, propositions correspond to types, and proofs correspond to values of those types \cite{wadler2015propositions}.
 
-Constructive logic builds a database of judgments, where each judgment is a formally validated proof. This approach ensures the logical system's integrity by requiring concrete evidence for every proposition. For instance, proving a number is even involves explicitly providing a number that satisfies the condition, rather than merely asserting it. By avoiding assumptions like the Law of Excluded Middle, constructive logic maintains consistency and reliability, ensuring that only provable propositions are included in the system.
+Constructive logic, also known as intuitionistic logic, differs from classical logic by rejecting the Law of the Excluded Middle (LEM), which states that every proposition is either true or false. Instead, constructive logic requires a proof to assert that a proposition is true—if no proof exists, the truth value remains unknown rather than defaulting to false.
+
 
 \subsection{Equality}
 \label{sec:Equality}
 
 \subsubsection{Definitional and Propositional Equality}
-Equality in Idris is captured by the `Equal` type, defined as follows:
+The equality type (=) in Idris2 follows the Martin-Löf Identity Type .
 
 \begin{idris}
 data (=) : a -> b -> Type where  
 Refl : x = x
 \end{idris}
 
-This states that two values are equal if they are definitionally identical, with `Refl` serving as explicit evidence of their equality.
+This enforces definitional equality, meaning that two terms must reduce to the same normal form to be considered equal.
 
 \begin{idris}
 plusReducesL : (n : Nat) -> plus Z n = n
-plusReducesL n = Refl
 \end{idris}
 
-This proposition asserts that adding zero to any number \( n \) results in \( n \), which is definitionally true.
+This proposition asserts that adding zero to any number \( n \) results in \( n \), which holds definitionally true.
 
 \begin{idris}
 plusReducesR : (n : Nat) -> plus n Z = n
 plusReducesR n = Refl
 \end{idris}
+The above definition does not work because plus is defined recursively on its first argument, and plus n Z does not immediately normalize to n in all cases. Since definitional equality in Idris requires both sides to reduce to the same normal form automatically, Refl is not a proof of plusReducesR.
 
-This is not definitionally true because the `plus` function is defined recursively on its first argument. While adding zero as the second argument reduces for specific cases, the reduction is not immediate or definitional. As a result, `Refl` cannot prove `plusReducesR` directly.
+To prove this equality, we need propositional equality, which allows reasoning about equalities that do not hold by mere computation. One way to establish this proof is by rewriting, explicitly applying the induction hypothesis for plusReducesR' at each step:
 
-In Idris, an equality type that can be proved using `Refl` alone is known as definitional equality. For cases like `plusReducesR`, where `Refl` is insufficient, additional techniques, such as propositional equality or rewriting, may be required.
+
+\begin{idris}
+plusReducesR : (n : Nat) -> plus n Z = n
+plusReducesR Z = Refl 
+plusReducesR (S k) = rewrite plusReducesR k in Refl  
+\end{idris}
 
 \subsubsection{Heterogeneous Equality}
 Equality in Idris is heterogeneous, meaning that it allows for the possibility of proposing equalities between values of different types. This means suggesting that two values of different types can be considered equal under certain assumptions or relationships. It becomes essential when working with dependent types, where types themselves depend on values.
@@ -256,23 +265,25 @@ leibnizEq a b = (P : A -> Type) -> P a -> P b
 \label{sec:features}
 
 \subsection{Introduction to Quantitative Type Theory (QTT)}
-Quantitative Type Theory (QTT) extends traditional dependent type theory by adding explicit tracking of how variables are used in programs \cite{atkey2018syntax}. Developed by Conor McBride, QTT addresses inefficiencies in traditional type theory, where variables serve both as type constructors and computational entities. By explicitly modeling variable usage, QTT improves efficiency, especially in resource management like memory.
+\label{sec:qtt}
+Quantitative Type Theory (QTT) extends traditional dependent type theory by adding explicit tracking of how variables are used in programs \cite{atkey2018syntax}. Developed by Conor McBride and Bob Atkey, extends traditional type theory by explicitly tracking how variables are used in programs. In classical type theory, variables serve both as type constructors and computational entities, which can lead to inefficiencies in managing resources like memory. QTT addresses this by control over variable usage enables more efficient memory management and ensures that resources are handled safely.
 
 \subsection{Multiplicities}
+\label{sec:multiplicities}
 In QTT, each variable binding is associated with a quantity (or multiplicity) that denotes how many times a variable can be used within its scope: either zero, exactly once, or unrestricted \cite{atkey2018syntax}.
 
-\begin{lstlisting}[mathescape=true]
-0: The variable is used only at compile time and erased at runtime
-1: The variable must be used exactly once at runtime (linear)
+
+0: The variable is used only at compile time and erased at runtime. \\
+1: The variable must be used exactly once at runtime (linear). \\
 $\omega$: The variable can be used any number of times (unrestricted)
-\end{lstlisting}
+
 \vspace{1em}
-Multiplicities in Idris 2 describe how often a variable must be used within the scope of its binding. A variable is considered "used" when it appears in the body of a definition, as opposed to a type declaration, and when it is passed as an argument with multiplicity 1 or \(\omega\). The multiplicities of a function's arguments are specified by its type, dictating how many times the arguments can be used within the function's body. Variables with multiplicity \(\omega\) are considered unrestricted: they can be passed to argument positions with multiplicities 0, 1, or \(\omega\). Conversely, a function that accepts an argument with multiplicity 1 guarantees that the argument will not be shared within its body in the future, although it is not required to ensure that it has not been shared in the past \cite{brady2021idris}.
+A variable is considered "used" when it appears in the body of a definition, as opposed to a type declaration, and when it is passed as an argument with multiplicity 1 or \(\omega\). The multiplicities of a function's arguments are specified by its type, dictating how many times the arguments can be used within the function's body. Variables with multiplicity \(\omega\) are considered unrestricted: they can be passed to argument positions with multiplicities 0, 1, or \(\omega\). Conversely, a function that accepts an argument with multiplicity 1 guarantees that the argument will not be shared within its body in the future, although it is not required to ensure that it has not been shared in the past \cite{brady2021idris}.
 
 \subsection{Linearity Example}
-In Idris 2, linearity (or multiplicity of 1) is a property of values in the type system that enforces the idea that a value must be used exactly once. This concept is rooted in linear logic and ensures resources are managed precisely, preventing accidental duplication or omission.
+In Idris 2, linearity (or multiplicity of 1) is a property of values in the type system that enforces the idea that a value must be used exactly once. This concept is rooted in linear logic and ensures resources are managed precisely, preventing accidental duplication or omission \cite{brady2021idris}.
 
-To illustrate this, we can consider a File System Protocol that allows us to open, close, and delete files. The protocol enforces linearity to ensure that files are managed correctly. The key rules are:
+To illustrate this, we can consider a file system protocol that allows us to open, close, and delete files. The protocol uses linearity to ensure that files are managed correctly. The key rules are:
 \begin{itemize}
     \item A file cannot be opened if it's already open.
     \item A file cannot be closed if it's already closed.
@@ -308,7 +319,6 @@ newFile p = p (MkFile "example.txt")
 Only files in the Closed state can be deleted:
 \begin{idris}
 deleteFile : (1 f : File Closed) -> IO ()
-deleteFile _ = putStrLn "File deleted."
 \end{idris}
 
 An example protocol can be seen below:
@@ -323,6 +333,16 @@ fileProg =
 
 This protocol demonstrates how linear types in Idris 2 enforce safe resource usage by modeling state transitions, preventing runtime errors, and ensuring predictable, reliable programs.
 
+If we deviate from the correct sequence—for example, by failing to delete the file—Idris rejects the program at compile time. Consider the following incorrect example:
+\begin{idris}
+fileProg : IO ()
+fileProg
+    = newFile $ \d =>
+          let f' = openFile f
+              f'' = closeDoor f' in
+              putStrLn "What could possibly go wrong?"
+\end{idris}
+This will result in a type error, as the linear type system detects that f'' was not used exactly once.
 \subsubsection{Erasure}
 Erasure in Idris2 determines which values are needed at runtime and which can be safely removed during compilation. Values marked with multiplicity 0 are used only during type checking and are erased from the final executable.
 
@@ -334,42 +354,42 @@ data Vec : (n : Nat) -> Type -> Type where
     (::) : (x : a) -> (xs : Vec k a) -> Vec (S k) a
 \end{idris}
 
-In this definition, the `length` function retrieves the length of a vector, which is available at compile time but erased at runtime:
-
+The following example shows how we must explicitly write { n : Nat } in the function definition to access n, because implicit parameters in Idris2 are erased by default (i.e., they have a multiplicity of 0) \cite{brady2021idris}.
 \begin{idris}
-length : {0 n : Nat} -> Vec n a -> Nat
+length : { n : Nat} -> Vec n a -> Nat
 length {n} xs = n
 \end{idris}
 
-The following example demonstrates a valid use of the `Vec` type, where the length information is available at compile time:
+
+
+If we try to define a function that sums the lengths of two vectors without making their lengths available at runtime, we encounter an error:
 
 \begin{idris}
-example : Vec 3 Integer
-example = 1 :: 2 :: 3 :: Nil
+sumLength : Vec m a -> Vec n a -> Nat
+sumLength xs ys = length xs + length ys
 \end{idris}
 
-However, if we try to define a function that sums the lengths of two vectors without making their lengths available at runtime, we encounter an error:
-
+Idris2 reprts the following error :
 \begin{idris}
-badSum : Vec m a -> Vec n a -> Nat
-badSum xs ys = length xs + length ys
+length.idr:7:20--7:28
+m is not accessible in this context
 \end{idris}
-
 This results in an error because `m` and `n` are erased (multiplicity 0) and not accessible in this context.
 
-To resolve this, we can define a function that makes `m` and `n` available at runtime:
+To resolve this, we need to give bindings for m and n with unrestricted multiplicity :
 
 \begin{idris}
-goodSum : {m, n : _} -> Vec m a -> Vec n a -> Nat
-goodSum xs ys = length xs + length ys
+sumLength : {m, n : _} -> Vec m a -> Vec n a -> Nat
+sumLength xs ys = length xs + length ys
 \end{idris}
 
 This example illustrates how erasure helps optimize runtime performance while maintaining compile-time guarantees. The length information is checked during compilation but doesn't incur runtime overhead unless explicitly needed.
 
 \subsection{Interactive Development Environment}  
+\label{sec:interactive-development-environment}
 Idris2's type-driven development approach shines when paired with its editor integration. During development, the compiler acts as an assistant, guiding the programmer through the code and suggesting potential solutions for incomplete programs. This interactive workflow is facilitated by Idris2's hole-driven development, case splitting, and proof search features, which help programmers incrementally build correct programs by leveraging the type system.
 
-We used Neovim as our editor, which provides key bindings for common REPL commands, such as adding clause templates, case splitting, and showing type/context of symbols. These features enable a seamless development experience, allowing programmers to focus on writing correct code while the compiler handles the verification and proof process. The plugins are available on GitHub \cite{repo-key}.
+We used Neovim as our primary editor for Idris 2 development, utilizing the idris2-nvim plugin \cite{repo-key}. This plugin provides key bindings for common REPL interactions, including: adding clause templates, case splitting, and showing type/context of symbols. These features enable a seamless development experience, allowing programmers to focus on writing correct code while the compiler handles the verification and proof process. 
 
 \subsubsection{Core Workflow}
 The core workflow in Idris2 begins with hole-driven development, where programmers start with type signatures and placeholders (holes) in their code. For example, consider the following function signature for `vzipWith`, which combines two vectors:
@@ -388,7 +408,7 @@ vzipWith f [] ys = ?vzipWith_rhs_1
 vzipWith f (x :: xs) ys = ?vzipWith_rhs_2
 \end{idris}
 
-At this point, the context and goal are displayed to the programmer. The context shows the types of the variables involved, while the goal indicates what needs to be proven or implemented. For example, the context might look like this:
+At this point, the context and goal are displayed to the programmer. The context shows the types of the variables involved, while the goal indicates what needs to be proven or implemented. At this stage of development, the context is as follows:
 
 \begin{idris}
  0 c : Type
@@ -401,7 +421,7 @@ At this point, the context and goal are displayed to the programmer. The context
 vzipWith_rhs_1 : Vect 0 c
 \end{idris}
 
-Here, the context provides information about the types of `f`, `xs`, and `ys`, as well as the expected type of the result. The goal is to fill in the hole or use proof search to find the solutions if possible. This interactive process allows for rapid development and verification of code, ensuring that the implementation adheres to the specified types and logic.
+Here, the context provides information about the types of `f`, `xs`, and `ys`, as well as the expected type of the result. The goal is to fill in the hole or use proof search to find the solutions if possible. This interactive process allows for rapid development and verification of code, ensuring that the implementation adheres to the specified types.
 
 \section{Verification Example}  
 \label{sec:verification-example}  
@@ -412,12 +432,12 @@ We define the regular expression type using algebraic data types as follows:
 
 \begin{idris}
 data Regex: (a: Type) -> Type where
-    Empty: Regex a
-    Epsilon: Regex a
-    Chr : a -> Regex a
-    Concat: Regex a -> Regex a -> Regex a
-    Alt:  Regex a -> Regex a -> Regex a
-    Star :  Regex a -> Regex a
+  Empty: Regex a
+  Epsilon: Regex a
+  Chr : a -> Regex a
+  Concat: Regex a -> Regex a -> Regex a
+  Alt:  Regex a -> Regex a -> Regex a
+  Star :  Regex a -> Regex a
 \end{idris}
 
 Our regular expression can be defined for alphabets (values) of any type \( a \). For simplicity, we will use \( \texttt{Char} \) in this example. The type signature for the match function is as follows:
@@ -498,6 +518,7 @@ matchCompleteness: (r: Regex Char) -> (s: List Char) -> lang r s -> match r s = 
 \end{idris}
 
 \subsubsection{Implementation and Proof}
+\label{sec:implementation-and-proof}
 To implement the match function, we can use a simple recursive approach that matches the regular expression against the input string. This implementation is straightforward and facilitates proving correctness more easily than other potential implementations. The implementation is as follows:
 
 \begin{idris}
