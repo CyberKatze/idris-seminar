@@ -158,7 +158,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{abstract}
-Idris2 is a dependently-typed functional programming language designed to facilitate formal verification and program correctness through its expressive type system. By leveraging dependent types, Idris2 enables developers to encode precise specifications directly within the type system, catching potential errors at compile time.This report explores Idris2’s capabilities through a verification example, examining its approach to theorem proving and interactive development. We discuss its strengths in formal verification, as well as challenges related to proof complexity and usability.
+Idris2 is a dependently-typed functional programming language designed to facilitate formal verification and program correctness through its expressive type system. By leveraging dependent types, Idris2 enables developers to encode precise specifications directly within the type system, catching potential errors at compile time. This report explores Idris2's capabilities through a verification example, examining its approach to theorem proving and interactive development. We discuss its strengths in formal verification, as well as challenges related to proof complexity and usability.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -168,7 +168,7 @@ Idris2 is a dependently-typed functional programming language designed to facili
 
 
 
-Idris2 is a pure functional programming language that treats types as first-class citizens, allowing them to be manipulated and computed like any other value. By treating types as first-class entities, Idris2 enables developers to encode correctness properties in a way that can be checked at compile time, with compiler acts as an assistant during development, reducing certain classes of runtime errors.
+Idris2 is a pure functional programming language that treats types as first-class citizens, allowing them to be manipulated and computed like any other value. By treating types as first-class entities, Idris2 enables developers to encode correctness properties in a way that can be checked at compile time, with the compiler acting as an assistant during development, reducing certain classes of runtime errors.
 
 This type-driven development approach ensures program correctness before execution, making Idris2 particularly valuable for critical systems, mathematical proofs, and complex state-dependent applications such as concurrent systems \cite{brady2021idris}. For example, Idris2 can enforce safety in division operations, as demonstrated below:
 
@@ -183,29 +183,30 @@ example2 : Nat
 example2 = safeDiv 12 0
 \end{idris}
 
-In this example, the safeDiv function is designed to prevent division by zero by enforcing a compile-time constraint on its second argument. The type {auto ok : GT d Z} ensures that d must be strictly greater than zero for the function to type-check. The `example` variable compiles successfully because it divides 12 by 5, a valid operation. However, `example2` will result in a compile-time error because it attempts to divide by zero, which violates the constraint enforced by the `GT d Z` condition. This demonstrates Idris2's ability to catch potential runtime errors during compilation.
+In this example, the \texttt{safeDiv} function is designed to prevent division by zero by enforcing a compile-time constraint on its second argument. The type \texttt{\{auto ok : GT d Z\}} ensures that \texttt{d} must be strictly greater than zero for the function to type-check. The \texttt{example} variable compiles successfully because it divides 12 by 5, a valid operation. However, \texttt{example2} will result in a compile-time error because it attempts to divide by zero, which violates the constraint enforced by the \texttt{GT d Z} condition. This demonstrates Idris2's ability to catch potential runtime errors during compilation.
 
-In the subsequent sections, this report explores several key aspects of Idris2. We begin with a brief overview of the language's background \ref{sec:background} and its evolution from Idris 1 to Idris 2. Next, we delve into the theoretical underpinnings of dependent types, focusing on propositions, judgments, and equality \ref{sec:Equality} in Idris2. We then discuss the features of Idris2 \ref{sec:features}, including Quantitative Type Theory (QTT) \ref{sec:qtt}, which formalizes resource usage in Idris2 through concepts like multiplicities \ref{sec:multiplicities}. Following this, we highlight Idris2's interactive development environment \ref{sec:interactive-development-environment} which facilitates type-driven development through features such as hole-driven programming, case splitting, and proof search. To illustrate its practical application in formal verification, we present a verification example \ref{sec:verification-example} using Idris2. Finally, we discuss the challenges encountered during the verification process and the broader implications of Idris2’s approach to correctness \ref{sec:implementation-and-proof}.
+In the subsequent sections, this report explores several key aspects of Idris2.
+We begin with a brief overview of the language's background (Section \ref{sec:background}) and its evolution from Idris 1 to Idris2. Next, we delve into the theoretical underpinnings of dependent types, focusing on propositions, and equality (Section \ref{sec:Equality}) in Idris2. We then discuss the features of Idris2 (Section \ref{sec:features}), including Quantitative Type Theory (QTT) (Section \ref{sec:qtt}), which formalizes resource usage in Idris2 through concepts like multiplicities (Section \ref{sec:multiplicities}). Following this, we highlight Idris2's interactive development environment (Section \ref{sec:interactive-development-environment}) which facilitates type-driven development through features such as hole-driven programming, case splitting, and proof search. To illustrate its practical application in formal verification, we present a verification example (Section \ref{sec:verification-example}) using Idris2. Finally, we discuss the challenges encountered during the verification process and the broader implications of Idris2's approach to correctness (Section \ref{sec:proof-of-completeness}).
 
 \section{Background}  
 \label{sec:background}  
 
 Programming languages have traditionally separated types and values, which means that certain errors, particularly those related to invalid values or incorrect data structures, are only caught at runtime. This limitation has posed a significant challenge in software engineering, as it allows many types of errors—such as accessing an element from an empty list—to slip through until the program is executed. The goal of dependent types is to address this problem by allowing types to depend on values, enabling the type system itself to enforce correctness at compile time.
 
-The concept of dependent types is not new; it has roots in mathematical logic and type theory \cite{martin-lof1984}. However, its application in programming languages was limited for many years. Idris, first introduced by Edwin Brady in 2009, was a pioneering language that sought to make dependent types practical and usable in real-world programming \cite{brady2013idris}. Through its use of dependent types, Idris allowed for the formal verification of certain aspects of a program at compile time—such as proving that a list is non-empty before calling the head function.
+The concept of dependent types is not new; it has roots in mathematical logic and type theory \cite{martin1984intuitionistic}. However, its application in programming languages was limited for many years. Idris, first introduced by Edwin Brady in 2009, was a pioneering language that sought to make dependent types practical and usable in real-world programming \cite{brady2013idris}. Through its use of dependent types, Idris allowed for the formal verification of certain aspects of a program at compile time—such as proving that a list is non-empty before calling the head function.
 
-Despite its potential, Idris 1 had its limitations. The performance of type checking was not optimal for large programs, and the language's implementation and theoretical foundations were not as robust as they could be. These shortcomings were particularly evident when trying to use Idris for large-scale or more complex applications. The need for improvement in both usability and performance led to the development of Idris 2.
+Despite its potential, Idris 1 had its limitations. The performance of type checking was not optimal for large programs, and the language's implementation and theoretical foundations were not as robust as they could be. These shortcomings were particularly evident when trying to use Idris for large-scale or more complex applications. The need for improvement in both usability and performance led to the development of Idris2 \cite{brady2021idris}.
 
-Idris 2 represents a complete redesign of the language, drawing on the lessons learned from Idris 1. One of the key challenges in the original Idris was the efficiency of type checking, especially when dealing with large programs. Idris 2 improves type checking performance compared to its predecessor by optimizing evaluation strategies. Furthermore, the language enhances compile-time argument erasure, reducing the overhead of generated executable code. Additionally, Idris 2 incorporates linear types as part of Quantitative Type Theory (QTT), providing a mechanism for better resource management and more precise control over side effects in functions.
+Idris2 represents a complete redesign of the language, drawing on the lessons learned from Idris 1. One of the key challenges in the original Idris was the efficiency of type checking, especially when dealing with large programs. Idris2 improves type checking performance compared to its predecessor by optimizing evaluation strategies. Furthermore, the language enhances compile-time argument erasure, reducing the overhead of generated executable code. Additionally, Idris2 incorporates linear types as part of Quantitative Type Theory (QTT), providing a mechanism for better resource management and more precise control over side effects in functions.
 
-These improvements have made Idris 2 a more practical and scalable tool for developers looking to leverage dependent types.
+These improvements have made Idris2 a more practical and scalable tool for developers looking to leverage dependent types.
   
 
 \section{Theorem Proving}
-\label{sec:Propositions and judgments}
+\label{sec:Proposition}
 
-\subsection{Propositions and Judgments}
-Before discussing theorem proving, we must first understand some fundamental concepts. A proposition is a statement that can be proven. Before proving it, we cannot formally determine whether it is true. A successful proof serves as evidence that establishes the proposition’s validity. In functional programming, propositions correspond to types, and proofs correspond to values of those types \cite{wadler2015propositions}.
+\subsection{Proposition}
+Before discussing theorem proving, we must first understand some fundamental concepts. A proposition is a statement that can be proven. Before proving it, we cannot formally determine whether it is true. A successful proof serves as evidence that establishes the proposition's validity. In functional programming, propositions correspond to types, and proofs correspond to values of those types \cite{howard1980formulae}.
 
 Constructive logic, also known as intuitionistic logic, differs from classical logic by rejecting the Law of the Excluded Middle (LEM), which states that every proposition is either true or false. Instead, constructive logic requires a proof to assert that a proposition is true—if no proof exists, the truth value remains unknown rather than defaulting to false.
 
@@ -214,7 +215,7 @@ Constructive logic, also known as intuitionistic logic, differs from classical l
 \label{sec:Equality}
 
 \subsubsection{Definitional and Propositional Equality}
-The equality type (=) in Idris2 follows the Martin-Löf Identity Type .
+The equality type (=) in Idris2 follows the Martin-Löf Identity Type.
 
 \begin{idris}
 data (=) : a -> b -> Type where  
@@ -227,15 +228,15 @@ This enforces definitional equality, meaning that two terms must reduce to the s
 plusReducesL : (n : Nat) -> plus Z n = n
 \end{idris}
 
-This proposition asserts that adding zero to any number \( n \) results in \( n \), which holds definitionally true.
+This proposition asserts that adding zero to any number \texttt{n} results in \texttt{n}, which holds definitionally true.
 
 \begin{idris}
 plusReducesR : (n : Nat) -> plus n Z = n
 plusReducesR n = Refl
 \end{idris}
-The above definition does not work because plus is defined recursively on its first argument, and plus n Z does not immediately normalize to n in all cases. Since definitional equality in Idris requires both sides to reduce to the same normal form automatically, Refl is not a proof of plusReducesR.
+The above definition does not work because \texttt{plus} is defined recursively on its first argument, and \texttt{plus n Z} does not immediately normalize to \texttt{n} in all cases. Since definitional equality in Idris requires both sides to reduce to the same normal form automatically, \texttt{Refl} is not a proof of \texttt{plusReducesR}.
 
-To prove this equality, we need propositional equality, which allows reasoning about equalities that do not hold by mere computation. One way to establish this proof is by rewriting, explicitly applying the induction hypothesis for plusReducesR' at each step:
+To prove this equality, we need propositional equality, which allows reasoning about equalities that do not hold by mere computation. One way to establish this proof is by rewriting, explicitly applying the induction hypothesis for \texttt{plusReducesR} at each step:
 
 
 \begin{idris}
@@ -252,7 +253,7 @@ vect_eq_length : (xs : Vect n a) -> (ys : Vect m a) ->
 (xs = ys) -> n = m 
 \end{idris}
 
-The assertion `(xs = ys)` indicates that the two vectors are equal in both value and type. Therefore, if `xs = ys`, then `n` and `m` must also be equal, because the length of the vector (n or m) is part of its type. This is why the function can safely return `n = m`.
+The assertion \texttt{(xs = ys)} indicates that the two vectors are equal in both value and type. Therefore, if \texttt{xs = ys}, then \texttt{n} and \texttt{m} must also be equal, because the length of the vector (\texttt{n} or \texttt{m}) is part of its type. This is why the function can safely return \texttt{n = m}.
 
 \subsubsection{Substitutive Property (Leibniz Equality)}
 Idris also supports reasoning about equality using the substitutive property, often referred to as Leibniz Equality. It formalizes the idea that if two values are equal, they are indistinguishable under any property. In Idris, this can be expressed as:
@@ -271,17 +272,17 @@ Quantitative Type Theory (QTT) extends traditional dependent type theory by addi
 \subsection{Multiplicities}
 \label{sec:multiplicities}
 In QTT, each variable binding is associated with a quantity (or multiplicity) that denotes how many times a variable can be used within its scope: either zero, exactly once, or unrestricted \cite{atkey2018syntax}.
-
-
-0: The variable is used only at compile time and erased at runtime. \\
-1: The variable must be used exactly once at runtime (linear). \\
-$\omega$: The variable can be used any number of times (unrestricted)
+\begin{itemize}
+\item 0: The variable is used only at compile time and erased at runtime.
+\item 1: The variable must be used exactly once at runtime (linear). 
+\item $\omega$: The variable can be used any number of times (unrestricted)
+\end{itemize}
 
 \vspace{1em}
 A variable is considered "used" when it appears in the body of a definition, as opposed to a type declaration, and when it is passed as an argument with multiplicity 1 or \(\omega\). The multiplicities of a function's arguments are specified by its type, dictating how many times the arguments can be used within the function's body. Variables with multiplicity \(\omega\) are considered unrestricted: they can be passed to argument positions with multiplicities 0, 1, or \(\omega\). Conversely, a function that accepts an argument with multiplicity 1 guarantees that the argument will not be shared within its body in the future, although it is not required to ensure that it has not been shared in the past \cite{brady2021idris}.
 
 \subsection{Linearity Example}
-In Idris 2, linearity (or multiplicity of 1) is a property of values in the type system that enforces the idea that a value must be used exactly once. This concept is rooted in linear logic and ensures resources are managed precisely, preventing accidental duplication or omission \cite{brady2021idris}.
+In Idris2, linearity (or multiplicity of 1) is a property of values in the type system that enforces the idea that a value must be used exactly once. This concept is rooted in linear logic and ensures resources are managed precisely, preventing accidental duplication or omission \cite{brady2021idris}.
 
 To illustrate this, we can consider a file system protocol that allows us to open, close, and delete files. The protocol uses linearity to ensure that files are managed correctly. The key rules are:
 \begin{itemize}
@@ -310,7 +311,7 @@ closeFile : (1 f : File Opened) -> File Closed
 closeFile (MkFile name) = MkFile name
 \end{idris}
 
-To ensure that files are created and used linearly, the `newFile` function accepts a function that takes a Closed file, ensuring the file is used exactly once:
+To ensure that files are created and used linearly, the \texttt{newFile} function accepts a function that takes a Closed file, ensuring the file is used exactly once:
 \begin{idris}
 newFile : (1 p : (1 f : File Closed) -> IO ()) -> IO ()
 newFile p = p (MkFile "example.txt")
@@ -331,22 +332,22 @@ fileProg =
             deleteFile f''
 \end{idris}
 
-This protocol demonstrates how linear types in Idris 2 enforce safe resource usage by modeling state transitions, preventing runtime errors, and ensuring predictable, reliable programs.
+This protocol demonstrates how linear types in Idris2 enforce safe resource usage by modeling state transitions, preventing runtime errors, and ensuring predictable, reliable programs.
 
 If we deviate from the correct sequence—for example, by failing to delete the file—Idris rejects the program at compile time. Consider the following incorrect example:
 \begin{idris}
 fileProg : IO ()
 fileProg
-    = newFile $ \d =>
+    = newFile $ \f =>
           let f' = openFile f
               f'' = closeDoor f' in
-              putStrLn "What could possibly go wrong?"
+              openFile f''
 \end{idris}
-This will result in a type error, as the linear type system detects that f'' was not used exactly once.
+This will result in a type error, as the linear type system detects that \texttt{f''} was not used exactly once.
 \subsubsection{Erasure}
 Erasure in Idris2 determines which values are needed at runtime and which can be safely removed during compilation. Values marked with multiplicity 0 are used only during type checking and are erased from the final executable.
 
-For example, consider the following definition of a vector type:
+Consider this vector type definition:
 
 \begin{idris}
 data Vec : (n : Nat) -> Type -> Type where
@@ -354,54 +355,59 @@ data Vec : (n : Nat) -> Type -> Type where
     (::) : (x : a) -> (xs : Vec k a) -> Vec (S k) a
 \end{idris}
 
-The following example shows how we must explicitly write { n : Nat } in the function definition to access n, because implicit parameters in Idris2 are erased by default (i.e., they have a multiplicity of 0) \cite{brady2021idris}.
-\begin{idris}
-length : { n : Nat} -> Vec n a -> Nat
-length {n} xs = n
-\end{idris}
-
-
-
-If we try to define a function that sums the lengths of two vectors without making their lengths available at runtime, we encounter an error:
+In Idris2, dependent type parameters like \texttt{n} in \texttt{Vec n a} have a multiplicity of zero by default, meaning they're erased at runtime. If we want to access the length parameter in a function, we must explicitly include it in the type signature:
 
 \begin{idris}
-sumLength : Vec m a -> Vec n a -> Nat
-sumLength xs ys = length xs + length ys
+length1 : Vec n a -> Nat
+length1 xs = n
 \end{idris}
 
-Idris2 reprts the following error :
+The context for the above function would be:
 \begin{idris}
-length.idr:7:20--7:28
-m is not accessible in this context
+0 a : Type
+0 n : Nat
+xs : Vec n a
+------------------------------
+goal : Nat
 \end{idris}
-This results in an error because `m` and `n` are erased (multiplicity 0) and not accessible in this context.
-
-To resolve this, we need to give bindings for m and n with unrestricted multiplicity :
+This results in an error because \texttt{n} has multiplicity 0, making it inaccessible at runtime. By explicitly binding \texttt{n} in the type signature, we change its multiplicity:
 
 \begin{idris}
-sumLength : {m, n : _} -> Vec m a -> Vec n a -> Nat
-sumLength xs ys = length xs + length ys
+length2 : {n : Nat} -> Vec n a -> Nat
+length2 {n} xs = n
 \end{idris}
 
-This example illustrates how erasure helps optimize runtime performance while maintaining compile-time guarantees. The length information is checked during compilation but doesn't incur runtime overhead unless explicitly needed.
+The context for this function would be:
+\begin{idris}
+0 a : Type
+n : Nat
+xs : Vec n a
+------------------------------
+goal : Nat
+\end{idris}
+Now, \texttt{n} has unrestricted multiplicity, meaning it can be used at runtime.
+
+We can also explicitly set a parameter's multiplicity to zero by placing \texttt{0} before the parameter name. For example, \texttt{\{0 n : Nat\}} would make \texttt{n} have multiplicity zero even when explicitly bound, ensuring it's erased at runtime while still being accessible during type checking.
+
+This design ensures that type-level information doesn't incur runtime overhead unless explicitly needed, optimizing performance while maintaining compile-time guarantees.
 
 \subsection{Interactive Development Environment}  
 \label{sec:interactive-development-environment}
 Idris2's type-driven development approach shines when paired with its editor integration. During development, the compiler acts as an assistant, guiding the programmer through the code and suggesting potential solutions for incomplete programs. This interactive workflow is facilitated by Idris2's hole-driven development, case splitting, and proof search features, which help programmers incrementally build correct programs by leveraging the type system.
 
-We used Neovim as our primary editor for Idris 2 development, utilizing the idris2-nvim plugin \cite{repo-key}. This plugin provides key bindings for common REPL interactions, including: adding clause templates, case splitting, and showing type/context of symbols. These features enable a seamless development experience, allowing programmers to focus on writing correct code while the compiler handles the verification and proof process. 
+We used Neovim as our primary editor for Idris2 development, utilizing the idris2-nvim plugin \cite{repo-key}. This plugin provides key bindings for common REPL interactions, including: adding clause templates, case splitting, and showing type/context of symbols. These features enable a seamless development experience, allowing programmers to focus on writing correct code while the compiler handles the verification and proof process. 
 
 \subsubsection{Core Workflow}
-The core workflow in Idris2 begins with hole-driven development, where programmers start with type signatures and placeholders (holes) in their code. For example, consider the following function signature for `vzipWith`, which combines two vectors:
+The core workflow in Idris2 begins with hole-driven development, where programmers start with type signatures and placeholders (holes) in their code. For example, consider the following function signature for \texttt{vzipWith}, which combines two vectors:
 
 \begin{idris}
 vzipWith : (a -> b -> c) -> Vect n a -> Vect n b -> Vect n c
 vzipWith f xs ys = ?vzipWith_rhs
 \end{idris}
 
-In this case, `?vzipWith\_rhs` represents a hole that we need to fill in with the implementation of the function.
+In this case, \texttt{?vzipWith\_rhs} represents a hole that we need to fill in with the implementation of the function.
 
-Next, we can perform case splitting on the first argument, `xs`, to generate clauses for different scenarios. This allows us to handle the base case (when `xs` is empty) and the recursive case (when `xs` has elements):
+Next, we can perform case splitting on the first argument, \texttt{xs}, to generate clauses for different scenarios. This allows us to handle the base case (when \texttt{xs} is empty) and the recursive case (when \texttt{xs} has elements):
 
 \begin{idris}  
 vzipWith f [] ys = ?vzipWith_rhs_1
@@ -411,22 +417,22 @@ vzipWith f (x :: xs) ys = ?vzipWith_rhs_2
 At this point, the context and goal are displayed to the programmer. The context shows the types of the variables involved, while the goal indicates what needs to be proven or implemented. At this stage of development, the context is as follows:
 
 \begin{idris}
- 0 c : Type
- 0 b : Type
- 0 a : Type
+ 0 c  : Type
+ 0 b  : Type
+ 0 a  : Type
    ys : Vect 0 b
-   f : a -> b -> c
- 0 n : Nat
+   f  : a -> b -> c
+ 0 n  : Nat
 ------------------------------
 vzipWith_rhs_1 : Vect 0 c
 \end{idris}
 
-Here, the context provides information about the types of `f`, `xs`, and `ys`, as well as the expected type of the result. The goal is to fill in the hole or use proof search to find the solutions if possible. This interactive process allows for rapid development and verification of code, ensuring that the implementation adheres to the specified types.
+Here, the context provides information about the types of \texttt{f}, \texttt{xs}, and \texttt{ys}, as well as the expected type of the result. The goal is to fill in the hole or use proof search to find the solutions if possible. This interactive process allows for rapid development and verification of code, ensuring that the implementation adheres to the specified types.
 
 \section{Verification Example}  
 \label{sec:verification-example}  
 
-In this section, we aim to prove the correctness of a simple regular expression match function using Idris2. The function takes a regular expression and a string as input, returning a boolean indicating whether the string matches the regular expression.
+In this section, we aim to prove the completeness of a simple regular expression match function using Idris2. While a full correctness proof would include both soundness and completeness, we focus specifically on proving completeness, showing that if a string is in the language denoted by a regular expression, then our matching algorithm will correctly identify it. The function takes a regular expression and a string as input, returning a boolean indicating whether the string matches the regular expression (\ref{sec:operational-semantics}).
 
 We define the regular expression type using algebraic data types as follows:
 
@@ -438,69 +444,104 @@ data Regex : (a : Type) -> Type where
   Concat  : Regex a -> Regex a -> Regex a
   Alt     : Regex a -> Regex a -> Regex a
   Star    : Regex a -> Regex a
-  
 \end{idris}
 
-Our regular expression can be defined for alphabets (values) of any type \( a \). For simplicity, we will use \( \texttt{Char} \) in this example. The type signature for the match function is as follows:
+Our regular expressions are parametrized by a type \texttt{a} which represents the type of elements in our alphabet. In our implementation, we instantiate \texttt{a} with \texttt{Char}, allowing \texttt{match} to use decidable equality, which \texttt{Char} provides.
 
+There are two ways to define the semantics of a regular expression: denotational and operational. We formalize both approaches and then aim to prove they are equivalent (we only prove completeness here).
+
+\subsection{Operational Semantics}
+The operational semantics of regular expressions is defined by a \texttt{match} function that determines whether a string is accepted by a regular expression. Our implementation is as follows:
+
+\label{sec:operational-semantics}  
 \begin{idris}
 match : (r: Regex Char) -> (s: List Char) -> Bool
+match Empty str = False
+match Epsilon [] = True
+match Epsilon _ = False
+match (Chr c) [] = False
+match (Chr c) [x] = x == c
+match (Chr c) (x1 :: x2 :: xs) = False
+match (Concat r1 r2) str =   
+    matchConcatList r1 r2 (splits str)
+match (Alt r1 r2) str =   
+    match r1 str || match r2 str  
+match (Star r) [] = True
+match (Star r) (x::xs) =
+    matchConcatList r (Star r) (appendFirst x (splits xs))
 \end{idris}
 
-Our proof specification formula aims to show:
+Further implementation for \texttt{matchConcatList} and \texttt{splits} can be found in our public repository \cite{idris-seminar}.
 
-\begin{equation}
-\forall r, s. s \in L(r) \Leftrightarrow \text{match } r \text{ s} = \text{True}
-\end{equation}
+\subsection{Denotational Semantics}
+We follow the approach by Conal Elliott in "Symbolic and automatic differentiation of languages" of representing languages as predicates on strings \cite{conal2021elliott}.
 
-To achieve this, we need to capture the membership of a string in the language defined by a regular expression.
-
-\subsection{Language Representation}
-From automata theory, we know that regular expressions are equivalent to formal languages, which are typically represented in set theory as a set of strings. In type theory, we can represent languages as predicates on strings, allowing us to demonstrate string membership in a language \cite{conal2021elliott}.
-
-We define languages in Idris as follows:
-
+We define a language as:
 \begin{idris}
 Lang : (a: Type) -> Type
 Lang a = List a -> Type
+\end{idris}
 
+This means a language over alphabet type \texttt{a} is a predicate that, given a list of elements of type \texttt{a}, produces a type. When this type is inhabited, the string belongs to the language; when it's uninhabited (like \texttt{Void}), the string is not in the language.
+
+The fundamental language operations are defined below, each precisely capturing a particular way of constructing languages:
+
+\textbf{Empty language} ($\emptyset$): Contains no strings at all. This is represented using \texttt{Void}, which is uninhabited, ensuring no string belongs to this language.
+\begin{idris}
 empty : Lang a
 empty _ = Void
+\end{idris}
 
+\textbf{Universal language} ($\Sigma^*$): Contains all possible strings over the alphabet. Represented using \texttt{Unit}, which is always inhabited, so every string belongs to this language.
+\begin{idris}
 univ : Lang a
 univ _ = Unit 
+\end{idris}
 
+\textbf{Epsilon language} ($\epsilon$): Contains only the empty string. A string belongs to this language if and only if it equals the empty list.
+\begin{idris}
 eps : Lang a
 eps w = w = []
+\end{idris}
 
+\textbf{Single-token language} ($c$): Contains only the one-character string [c]. A string belongs to this language if and only if it's a singleton list containing the specified character.
+\begin{idris}
 tok : a -> Lang a
 tok c w = w = [c]
+\end{idris}
 
-(:.:) : Type -> Lang a -> Lang a  
-(:.:) s l w = Pair s (l w)
-
+\textbf{Union} ($P \cup Q$): Contains all strings that belong to either of two languages. A string belongs to the union if it belongs to either constituent language, represented by the sum type \texttt{Either}.
+\begin{idris}
 union: Lang a -> Lang a -> Lang a
 union l1 l2 w = Either (l1 w) (l2 w)
+\end{idris}
 
+\textbf{Intersection} ($P \cap Q$): Contains strings that belong to both languages. A string belongs to the intersection if it belongs to both constituent languages, represented by the product type \texttt{Pair}.
+\begin{idris}
 intersection: Lang a -> Lang a -> Lang a
 intersection l1 l2 w = Pair (l1 w) (l2 w)
+\end{idris}
 
+\textbf{Concatenation} ($P \ast Q$): Contains strings that can be split into two parts where the first part belongs to the first language and the second part belongs to the second language. We use dependent pairs and existential quantification to express this operation.
+\begin{idris}
 exists : {a, b : Type} -> (p: (Pair a b) -> Type) -> Type 
 exists {a} {b} p = DPair (a, b) p 
 
 langConcat: {a: Type} -> Lang a -> Lang a -> Lang a  
-langConcat l1 l2 w = 
-  exists (\ (w1 , w2) => Pair (w = w1 ++ w2) (Pair (l1 w1) (l2 w2)))
+langConcat l1 l2 w = exists (\ (w1, w2) => 
+                       Pair (w = w1 ++ w2) (Pair (l1 w1) (l2 w2)))
+\end{idris}
 
+\textbf{Kleene star} ($P^*$): Contains strings that can be decomposed into a list of substrings, each belonging to the input language. This includes the empty string (corresponding to an empty list of substrings).
+\begin{idris}
 concat: {a: Type} -> List (List a) -> List a
 concat = foldr (++) []
 
 langStar: {a: Type} -> Lang a -> Lang a
-langStar l w  = DPair _ (\ws => Pair (w = concat ws) (All l ws))
+langStar l w = DPair _ (\ws => Pair (w = concat ws) (All l ws))
 \end{idris}
 
-Now we can define the language of a regular expression as follows:
-
+The semantics of regular expressions is then given by the \texttt{lang} function, which maps each regular expression constructor to its corresponding language operation:
 \begin{idris}
 lang : {a: Type} -> Regex a -> Lang a
 lang Empty = empty
@@ -511,51 +552,16 @@ lang (Alt x y) = union (lang x) (lang y)
 lang (Star x) = langStar (lang x)
 \end{idris}
 
-Our correctness proof specification involves proving both the completeness and soundness of the match function:
+\subsection{Proof of Completeness}
+\label{sec:proof-of-completeness}
+
+Having defined both operational semantics (the \texttt{match} function in Section \ref{sec:operational-semantics}) and denotational semantics (the \texttt{lang} function), we can now prove the completeness property.
 
 \begin{idris}
-matchSoundness : (r: Regex Char) -> (s: List Char) -> match r s = True -> lang r s
 matchCompleteness: (r: Regex Char) -> (s: List Char) -> lang r s -> match r s = True
 \end{idris}
 
-\subsubsection{Implementation and Proof}
-\label{sec:implementation-and-proof}
-To implement the match function, we can use a simple recursive approach that matches the regular expression against the input string. This implementation is straightforward and facilitates proving correctness more easily than other potential implementations. The implementation is as follows:
-
-\begin{idris}
-match : Regex Char -> List Char -> Bool
-match Empty str = False
-match Epsilon [] = True
-match Epsilon _ = False
-match (Chr c) [] = False
-match (Chr c) [x] = x == c
-match (Chr c) (x1 :: x2 :: xs) = False
-match (Concat r1 r2) str =   
-    matchConcatList r1 r2 (splits str) False
-match (Alt r1 r2) str =   
-    match r1 str || match r2 str  
-match (Star r) [] = True
-match (Star r) (x::xs) =
-    matchConcatList r (Star r) (appendFirst x (splits xs)) False 
-\end{idris}
-
-The match function uses pattern matching on the regular expression and the input string, recursively matching based on the structure of the regular expression. The \texttt{matchConcatList} function is employed to match the concatenation of two regular expressions with the string by splitting the string into all possible prefixes and suffixes, then recursively matching the two regular expressions with these prefixes and suffixes.
-
-The implementations of \texttt{matchConcatList} and \texttt{splits} are as follows:
-
-\begin{idris}
-matchConcatList : (r1 : Regex Char) -> (r2 : Regex Char) -> 
-(List (List Char, List Char)) -> Bool -> Bool
-matchConcatList r1 r2 [] acc = acc
-matchConcatList r1 r2 ((s1, s2) :: xs) acc = 
-    (match r1 s1 && (match r2 s2)) || (matchConcatList r1 r2 xs acc)
-
-splits : List Char -> List (List Char, List Char)
-splits [] = [([],[])]
-splits (x :: xs) = ([], x :: xs) :: appendFirst x (splits xs)
-\end{idris}
-
-Next, we proceed with the proof, starting with the completeness of the match function. The completeness proof states that if a string is in the language of a regular expression, then the match function should return True. We can prove this by pattern matching on the regular expression:
+We begin by pattern matching on the regular expression:
 
 \begin{idris}
 matchCompleteness : (r: Regex Char) -> (s: List Char) ->
@@ -568,7 +574,7 @@ matchCompleteness (Alt r1 r2) s prf = ?matchCompleteness_rhs_4
 matchCompleteness (Star r) s prf = ?matchCompleteness_rhs_5
 \end{idris}
 
-Starting with the first case, since we define the Empty language as a predicate that yields the bottom type (Void), we can use the \texttt{absurd} function (ex-falso-quadlibet) to prove this case. For the Epsilon case, Idris2 provides enough information to prove it simply by rewriting the \texttt{prf} in our goal:
+Starting with the first case, since we define the Empty language as a predicate that yields the bottom type (\texttt{Void}), we can use the \texttt{absurd} function to prove this case. For the \texttt{Epsilon} case, Idris2 provides intermediate information to prove it by rewriting the equality proof (\texttt{prf}) in our goal:
 
 \begin{idris}
 s : List Char
@@ -593,10 +599,12 @@ prf : [y] = [x]
 goal : intToBool (prim__eq_Char y x) = True
 \end{idris}
 
-We can use the lemma to prove the goal:
+Idris2 can reach propositional equality (\texttt{x = y}) from the equality of singelton lists but not the boolean equality (\texttt{==}).
+Using the \texttt{believe\_me} function we can prove (\texttt{x == y = True}). As noted in the Idris2 documentation, \texttt{believe\_me} is an unsafe cast that allows users to bypass the typechecker when they know something to be true even though it cannot be proven \cite{idris2-believeme}. It should only be used when we have a proof that Idris2 cannot find.
 
 \begin{idris}
 singeltonEq : {x, y : Char} -> Prelude.Basics.(::) x [] = y :: [] -> x == y = True
+singeltonEq Refl = believe_me Refl 
 
 matchCompleteness (Chr x) ([y]) prf = rewrite singeltonEq prf in Refl
 \end{idris}
@@ -610,43 +618,46 @@ matchCompleteness (Alt x y) s (Right z) = let rec = matchCompleteness y s z in
     rewrite rec in rewrite orTrueTrue (match x s) in Refl 
 \end{idris}
 
-Further cases require more complex proofs, which involve splitting the string into all possible prefixes and suffixes and recursively matching the two regular expressions with these prefixes and suffixes. 
+The \texttt{orTrueTrue} lemma, which is built into the Idris2 standard libraries, has the following type signature:
+\begin{idris}
+orTrueTrue : (x : Bool) -> x || Delay True = True
+\end{idris}
 
-For the \texttt{Concat} case, we can further case split on \texttt{prf} to obtain the prefixes and suffixes, leading to more proofs involving dependent pairs and independent pairs (conjunction) to prove the goal. The dependent pair is denoted by \texttt{**} and the independent pair by \texttt{(,)}. We add recursive calls into let bindings to provide more information for proving the goal. By examining the context and goal, we can see that we need to use some lemmas to show that \( z \) and \( w \) are in the splits of \texttt{s} and that having proof of their matching with the regular expressions can help us prove the goal:
+This lemma simply formalizes that for any boolean value \texttt{x}, the expression \texttt{x || True} always evaluates to \texttt{True}. The \texttt{Delay} keyword defers evaluation of its argument until needed.
+
+For the \texttt{Concat} case, we can further case split on \texttt{prf} to obtain the prefixes and suffixes, leading to more proofs involving dependent pairs and independent pairs (conjunction) to prove the goal. The dependent pair is denoted by \texttt{**} and the independent pair by \texttt{(,)}. We add recursive calls into let bindings to prove intermediate subgoals. By examining the context and goal, we can see that we need to use some lemmas to show that \texttt{pre} and \texttt{suf} are in the splits of \texttt{s} and that having proof of their matching with the regular expressions can help us prove the goal:
 
 \begin{idris}
-matchCompleteness (Concat x y) s (((z, w) ** (v, (t, u)))) = 
-    let rec1 = matchCompleteness x z t
-        rec2 = matchCompleteness y w u 
-        temp = trans (cong (&& (match y w)) rec1) rec2
+matchCompleteness (Concat x y) s (((pre, suf) ** (v, (t, u)))) = 
+    let rec1 = matchCompleteness x pre t
+        rec2 = matchCompleteness y suf u 
+        temp = trans (cong (&& (match y suf)) rec1) rec2
     in ?goal
 
 ------------------------------
-z : List Char
-w : List Char
+pre : List Char
+suf : List Char
 s : List Char
-v : s = z ++ w
+v : s = pre ++ suf
 x : Regex Char
-t : lang x z
+t : lang x pre
 y : Regex Char
-u : lang y w
-rec1 : match x z = True
-rec2 : match y w = True
-temp : match x z && Delay (match y w) = True
+u : lang y suf
+rec1 : match x pre = True
+rec2 : match y suf = True
+temp : match x pre && Delay (match y suf) = True
 ------------------------------
-goal : matchConcatList x y (splits s) False = True
+goal : matchConcatList x y (splits s) = True
 \end{idris}
 
 The lemmas used in the proof are as follows:
-
-(You can find the implementation of the lemmas in the GitHub repository \cite{idris-seminar}):
 
 \begin{idris}
 splitElem : {s : List Char} -> (z, w : List Char) ->
     (p : s = z ++ w) -> Elem (z, w) (splits s)
 
 splitsMatch: {s : List (List Char , List Char)} -> Elem (s1, s2) s -> 
-    match r1 s1 && match r2 s2 = True -> matchConcatList r1 r2 s False = True
+    match r1 s1 && match r2 s2 = True -> matchConcatList r1 r2 s = True
 \end{idris}
 
 By rewriting the goal using these lemmas, we can prove the goal:
@@ -677,14 +688,12 @@ matchCompleteness (Star r) (y :: ys) ((xs ** (z, ws))) = impossible
 
 We add the extra cases that are impossible since Idris2 requires us to prove all cases. However, as noted, these cases overlap with those we have already proven. This is a limitation in Idris2, as it seems unable to infer that cases where \texttt{xs} and \texttt{ws} have different sizes are not possible, thus requiring us to prove them all.
 
-We did not further prove the soundness of the match function, but we assume it would be similar to the completeness proof, albeit in the opposite direction.
-
 \section{Conclusion}  
 \label{sec:conclusion}  
 
-This exploration of Idris2 demonstrates its unique capabilities in bridging formal verification and practical programming through Quantitative Type Theory (QTT). By introducing multiplicities (0, 1, \(\omega\)), Idris2 enables precise control over resource usage patterns, as exemplified in our file system protocol where linear types enforce safe state transitions. This feature not only enhances the reliability of software but also allows developers to reason about resource management at a higher level of abstraction.
+This exploration of Idris2 demonstrates its capabilities in formal verification through dependent types. Our verification example with regular expressions illustrates how Idris2's type system enables us to encode and prove properties about programs. By expressing the semantics of regular expressions both denotationally and operationally, we were able to formally prove the completeness property of our matching algorithm.
 
-The language's compile-time guarantees effectively eliminate entire categories of runtime errors, particularly in resource-sensitive operations and stateful systems. This is particularly beneficial in critical applications where safety and correctness are paramount, such as in financial systems, medical devices, and other safety-critical software.
+Idris2's compile-time guarantees effectively help eliminate certain categories of runtime errors through type checking. The interactive development environment, with features like hole-driven development and case splitting, provides valuable assistance when constructing proofs. These tools were particularly helpful in our verification example when dealing with complex pattern matching and equality proofs.
 
 However, despite its strengths, Idris2 does have limitations that can impact the proof verification process. For instance, the presence of overlapping patterns in case analysis can lead to proofs that are more exhaustive than necessary, complicating the verification of complex data structures or recursive functions. Additionally, there are instances where Idris2 struggles to simplify the context and goals during proof construction, necessitating the manual addition of lemmas to facilitate the proof process. This can make the verification experience less intuitive and more cumbersome for developers.
 
@@ -692,13 +701,12 @@ Furthermore, while Idris2's REPL provides a solid foundation for interactive dev
 
 In conclusion, Idris2's innovative approach to dependent types and formal verification positions it as a powerful tool for developing reliable and correct software. Its expressive type system, combined with an interactive development environment and support for theorem proving, offers a promising path toward safer and more robust software systems. As the language continues to evolve, addressing its current limitations will be crucial in broadening its adoption and enhancing its usability for a wider range of programming tasks.
 
-\newpage
 \section*{Acknowledgements}
 We would like to express our gratitude to the developers and contributors of Idris2 for their innovative work on this functional programming language. Their efforts have made it possible to explore advanced concepts in type theory and formal verification.
 
 We also extend our heartfelt thanks to our supervisor, Cass Alexandru, who provided invaluable guidance and support throughout this project. Their insights and encouragement were instrumental in shaping our work.
 
-Additionally, we acknowledge the use of AI assistance in improving our report and for auto-completing some parts of our code. This support has significantly enhanced the clarity and quality of our work.
+Additionally, we acknowledge the use of AI assistance in improving our report and for auto-completing some parts of our code.
 
 \newpage
 \nocite{*}
