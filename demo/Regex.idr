@@ -10,7 +10,7 @@ import Data.List.Elem
 import Decidable.Equality
 import Decidable.Equality.Core
 import Prelude
-improt
+
 public export
 data Regex: (a: Type) -> Type where
   Empty: Regex a
@@ -158,15 +158,15 @@ mapElem f x [] prf = absurd prf
 mapElem f x (x::xs) Here = Here
 mapElem f x (y::ys) (There prf) = There (mapElem f x ys prf)
 
-splitRightNil : (t : List Char) -> Elem (t, []) (splits t)
-splitRightNil [] = Here
-splitRightNil (x :: xs) = ?eeef
 
-
-splitLemma : {xs, ws : List Char} -> (x : Char) ->
-             Elem (xs, ws) (splits (xs ++ ws)) ->
-             Elem (x :: xs, ws) (appendFirst x (splits (xs ++ ws)))
-splitLemma x prf = ?dfdfd
+splitLemma : {pre, suf : List Char} -> {xs : List (List Char, List Char) } -> (x : Char) ->
+             Elem (pre, suf) xs ->
+             Elem (x :: pre, suf) (appendFirst x xs)
+splitLemma {xs = []} y prf = absurd prf
+splitLemma {xs = ((a,b) :: xs)} y prf = case prf of
+                                      Here => Here
+                                      There z => let rec = splitLemma y z
+                                                  in There rec
 
 splitElem : {s : List Char} ->
 (z, w : List Char) ->
@@ -218,9 +218,8 @@ exampleRegex : Regex Char
 exampleRegex = Star (Concat (Chr 'a') (Chr 'b'))
 
 decEqRefl : (x : Char) -> decEq x x = Yes Refl
-%unsafe
 singletonEq :{x, y : Char} ->  Prelude.Basics.(::) x [] = y :: [] -> x == y = True
-singletonEq Refl = believe_me Refl
+singletonEq prf = believe_me prf
 singletonEqRev :{x, y : Char} -> x == y = True -> Prelude.Basics.(::) x [] = y :: []
 
 --leammas
@@ -234,20 +233,19 @@ splitsMatch {s= ((ns1, ns2) :: xs) } (There y) prf2 = let rec = splitsMatch y pr
 
 -- Completeness of the match function
 matchCompletness : (r : Regex Char) -> (s : List Char) -> lang r s -> match r s = True
-matchCompletness Empty s l  = absurd l
+matchCompletness Empty s prf  = absurd prf
 matchCompletness Epsilon s prf = rewrite prf in Refl
-matchCompletness (Chr x) [] l = ?ddfdf
-matchCompletness (Chr x) ([y]) prf = rewrite singletonEq prf in ?ddfeeer
-matchCompletness (Chr x) (x1 :: x2 :: xs) l impossible
+matchCompletness (Chr x) [] prf impossible
+matchCompletness (Chr x) ([y]) prf = rewrite singletonEq prf in Refl
+matchCompletness (Chr x) (x1 :: x2 :: xs) prf impossible
 matchCompletness (Alt x y) s (Left z) = let rec = matchCompletness x s z in rewrite rec in Refl
 matchCompletness (Alt x y) s (Right z) = let rec = matchCompletness y s z in rewrite rec in rewrite orTrueTrue (match x s) in Refl
 matchCompletness (Concat x y) s (((pre, suf) ** (v, (t, u)))) =
   let rec1 = matchCompletness x pre t
       rec2 = matchCompletness y suf u
       temp = trans (cong (&& (match y suf)) rec1 ) rec2
-      in ?heee
-      --lem = sym (splitsMatch (splitElem z w v) temp) in rewrite lem
-      --in Refl
+      lem = sym (splitsMatch (splitElem pre suf v) temp) in rewrite lem
+      in Refl
 matchCompletness (Star r) s (([] ** (y, z))) =  rewrite y in Refl
 matchCompletness (Star r) [] (xs ** (z, ws)) = Refl
 matchCompletness (Star r) (y :: ys) (((x::xs) ** (z, w::ws))) =
