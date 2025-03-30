@@ -165,13 +165,9 @@ Idris2 is a dependently-typed functional programming language designed to facili
 
 \section{Introduction}
 \label{sec:introduction}
-
-
-
 Idris2 is a pure functional programming language that treats types as first-class citizens, allowing them to be manipulated and computed like any other value. By treating types as first-class entities, Idris2 enables developers to encode correctness properties in a way that can be checked at compile time, with the compiler acting as an assistant during development, reducing certain classes of runtime errors.
 
-This type-driven development approach ensures program correctness before execution, making Idris2 particularly valuable for critical systems, mathematical proofs, and complex state-dependent applications such as concurrent systems \cite{brady2021idris}. For example, Idris2 can enforce safety in division operations, as demonstrated below:
-
+This type-driven development approach ensures program correctness before execution, making Idris2 particularly useful for critical systems, mathematical proofs, and applications with complex state dependencies \cite{brady2021idris}. For example, Idris2 can enforce safety in division operations, as demonstrated below:
 \begin{idris}
 safeDiv : (num : Nat) -> (d : Nat) -> {auto ok : GT d Z} -> Nat  
 safeDiv n d  = div n d  
@@ -182,11 +178,12 @@ example = safeDiv 12 5
 example2 : Nat
 example2 = safeDiv 12 0
 \end{idris}
+In this example, the \texttt{safeDiv} function is designed to prevent division by zero by enforcing a compile-time constraint on its second argument. The constraint \texttt{GT d Z} ensures that \texttt{d} will be strictly greater than zero. The \texttt{\{auto ok : ...\}} syntax indicates an implicit argument with automatic proof search, a feature documented in the Idris2 reference manual \cite{idris2-auto}. 
+While this is a simple example, what makes it powerful is not just the evaluation of constant expressions (which many compilers can do), but rather Idris2's ability to express logical constraints as part of the type system. The \texttt{example} variable compiles successfully because it divides 12 by 5, a valid operation. However, \texttt{example2} will result in a compile-time error because it attempts to divide by zero, which violates the constraint at the invocation site. This capability extends beyond simple constants to arbitrary expressions where the constraint can be verified statically.
 
-In this example, the \texttt{safeDiv} function is designed to prevent division by zero by enforcing a compile-time constraint on its second argument. The type \texttt{\{auto ok : GT d Z\}} ensures that \texttt{d} must be strictly greater than zero for the function to type-check. The \texttt{example} variable compiles successfully because it divides 12 by 5, a valid operation. However, \texttt{example2} will result in a compile-time error because it attempts to divide by zero, which violates the constraint enforced by the \texttt{GT d Z} condition. This demonstrates Idris2's ability to catch potential runtime errors during compilation.
 
 In the subsequent sections, this report explores several key aspects of Idris2.
-We begin with a brief overview of the language's background (Section \ref{sec:background}) and its evolution from Idris 1 to Idris2. Next, we delve into the theoretical underpinnings of dependent types, focusing on propositions, and equality (Section \ref{sec:Equality}) in Idris2. We then discuss the features of Idris2 (Section \ref{sec:features}), including Quantitative Type Theory (QTT) (Section \ref{sec:qtt}), which formalizes resource usage in Idris2 through concepts like multiplicities (Section \ref{sec:multiplicities}). Following this, we highlight Idris2's interactive development environment (Section \ref{sec:interactive-development-environment}) which facilitates type-driven development through features such as hole-driven programming, case splitting, and proof search. To illustrate its practical application in formal verification, we present a verification example (Section \ref{sec:verification-example}) using Idris2. Finally, we discuss the challenges encountered during the verification process and the broader implications of Idris2's approach to correctness (Section \ref{sec:proof-of-completeness}).
+We begin with a brief overview of the language's background (Section \ref{sec:background}) and its evolution from Idris 1 to Idris2. Next, we delve into the theoretical underpinnings of dependent types, focusing on propositions and equality (Section \ref{sec:Equality}) in Idris2. We then discuss the features of Idris2 (Section \ref{sec:features}), including Quantitative Type Theory (QTT) (Section \ref{sec:qtt}), which formalizes resource usage through concepts like multiplicities (Section \ref{sec:multiplicities}). Following this, we highlight Idris2's interactive development environment (Section \ref{sec:interactive-development-environment}) which facilitates type-driven development through features such as hole-driven programming, case splitting, and proof search. To illustrate its practical application in formal verification, we present a verification example (Section \ref{sec:verification-example}). Finally, we discuss the challenges encountered during the verification process and the broader implications of Idris2's approach to correctness (Section \ref{sec:proof-of-completeness}).
 
 \section{Background}  
 \label{sec:background}  
@@ -197,25 +194,22 @@ The concept of dependent types is not new; it has roots in mathematical logic an
 
 Despite its potential, Idris 1 had its limitations. The performance of type checking was not optimal for large programs, and the language's implementation and theoretical foundations were not as robust as they could be. These shortcomings were particularly evident when trying to use Idris for large-scale or more complex applications. The need for improvement in both usability and performance led to the development of Idris2 \cite{brady2021idris}.
 
-Idris2 represents a complete redesign of the language, drawing on the lessons learned from Idris 1. One of the key challenges in the original Idris was the efficiency of type checking, especially when dealing with large programs. Idris2 improves type checking performance compared to its predecessor by optimizing evaluation strategies. Furthermore, the language enhances compile-time argument erasure, reducing the overhead of generated executable code. Additionally, Idris2 incorporates linear types as part of Quantitative Type Theory (QTT), providing a mechanism for better resource management and more precise control over side effects in functions.
-
-These improvements have made Idris2 a more practical and scalable tool for developers looking to leverage dependent types.
+Idris2 represents a complete redesign of the language, drawing on the lessons learned from Idris~1. One of the key challenges in the original Idris was the efficiency of type checking, especially when dealing with large programs. Idris2 improves type checking performance compared to its predecessor by optimizing evaluation strategies. Furthermore, the language enhances compile-time argument erasure, reducing the overhead of generated executable code. Additionally, Idris2 incorporates linear types as part of Quantitative Type Theory (QTT), providing a mechanism for better resource management and more precise control over side effects in functions\cite{brady2021idris}.
   
 
 \section{Theorem Proving}
 \label{sec:Proposition}
 
-\subsection{Proposition}
+\subsection{Propositions}
 Before discussing theorem proving, we must first understand some fundamental concepts. A proposition is a statement that can be proven. Before proving it, we cannot formally determine whether it is true. A successful proof serves as evidence that establishes the proposition's validity. In functional programming, propositions correspond to types, and proofs correspond to values of those types \cite{howard1980formulae}.
 
-Constructive logic, also known as intuitionistic logic, differs from classical logic by rejecting the Law of the Excluded Middle (LEM), which states that every proposition is either true or false. Instead, constructive logic requires a proof to assert that a proposition is true—if no proof exists, the truth value remains unknown rather than defaulting to false.
-
+Constructive logic, also known as intuitionistic logic, differs from classical logic by rejecting the Law of the Excluded Middle (LEM). In classical logic, LEM states that for any proposition $P$, either $P$ is true or its negation is true ($P \lor \lnot P$). Constructive logic requires explicit evidence to establish the truth of a proposition—if no proof exists, the truth value remains unknown. It's worth noting that LEM does hold for decidable propositions in intuitionistic logic, which are propositions where we can algorithmically determine whether they are true or false \cite{dummett2000elements}.
 
 \subsection{Equality}
 \label{sec:Equality}
 
 \subsubsection{Definitional and Propositional Equality}
-The equality type (=) in Idris2 follows the Martin-Löf Identity Type.
+The equality type (=) in Idris2 follows the Martin-Löf Identity Type \cite{martin1984intuitionistic}.
 
 \begin{idris}
 data (=) : a -> b -> Type where  
@@ -226,9 +220,18 @@ This enforces definitional equality, meaning that two terms must reduce to the s
 
 \begin{idris}
 plusReducesL : (n : Nat) -> plus Z n = n
+plusReducesL n = Refl
 \end{idris}
 
-This proposition asserts that adding zero to any number \texttt{n} results in \texttt{n}, which holds definitionally true.
+This proposition asserts that adding zero to any number \texttt{n} results in \texttt{n}, which holds definitionally true. To understand why this works, we need to look at how \texttt{plus} is defined in Idris2:
+
+\begin{idris}
+plus : Nat -> Nat -> Nat
+plus Z y = y
+plus (S k) y = S (plus k y)
+\end{idris}
+
+When we evaluate \texttt{plus Z n}, it immediately reduces to \texttt{n} by the first clause of the definition, making \texttt{Refl} a valid proof.
 
 \begin{idris}
 plusReducesR : (n : Nat) -> plus n Z = n
@@ -236,14 +239,15 @@ plusReducesR n = Refl
 \end{idris}
 The above definition does not work because \texttt{plus} is defined recursively on its first argument, and \texttt{plus n Z} does not immediately normalize to \texttt{n} in all cases. Since definitional equality in Idris requires both sides to reduce to the same normal form automatically, \texttt{Refl} is not a proof of \texttt{plusReducesR}.
 
-To prove this equality, we need propositional equality, which allows reasoning about equalities that do not hold by mere computation. One way to establish this proof is by rewriting, explicitly applying the induction hypothesis for \texttt{plusReducesR} at each step:
-
+To prove this equality, we need propositional equality, which allows reasoning about equalities that do not hold by mere computation. We can prove this using induction on the natural number \texttt{n}:
 
 \begin{idris}
 plusReducesR : (n : Nat) -> plus n Z = n
 plusReducesR Z = Refl 
 plusReducesR (S k) = rewrite plusReducesR k in Refl  
 \end{idris}
+
+In this proof, we first handle the base case where \texttt{n = Z}, which is trivial since \texttt{plus Z Z = Z} by definition. For the inductive case \texttt{n = S k}, we assume as our induction hypothesis that \texttt{plus k Z = k} holds. We then use the \texttt{rewrite} syntax to substitute this equality into our goal, transforming \texttt{plus (S k) Z = S k} into \texttt{S (plus k Z) = S k}, and finally into \texttt{S k = S k}, which is provable by \texttt{Refl}.
 
 \subsubsection{Heterogeneous Equality}
 Equality in Idris is heterogeneous, meaning that it allows for the possibility of proposing equalities between values of different types. This means suggesting that two values of different types can be considered equal under certain assumptions or relationships. It becomes essential when working with dependent types, where types themselves depend on values.
@@ -267,7 +271,10 @@ leibnizEq a b = (P : A -> Type) -> P a -> P b
 
 \subsection{Introduction to Quantitative Type Theory (QTT)}
 \label{sec:qtt}
-Quantitative Type Theory (QTT) extends traditional dependent type theory by adding explicit tracking of how variables are used in programs \cite{atkey2018syntax}. Developed by Conor McBride and Bob Atkey, extends traditional type theory by explicitly tracking how variables are used in programs. In classical type theory, variables serve both as type constructors and computational entities, which can lead to inefficiencies in managing resources like memory. QTT addresses this by control over variable usage enables more efficient memory management and ensures that resources are handled safely.
+Quantitative Type Theory (QTT) extends traditional dependent type theory by adding explicit tracking of how variables are used in programs \cite{atkey2018syntax}. Developed by Conor McBride and Bob Atkey, QTT addresses a fundamental challenge in type theory: managing the distinction between compile-time type information and runtime computational data.
+
+In traditional dependent type theory, there is often no clear separation between values used for computation and values used only for type checking. This can lead to inefficiencies where information that is only needed during type checking is retained at runtime. QTT solves this problem by introducing a formal system to track variable usage, allowing the compiler to determine which values can be safely erased after type checking and which must be preserved for runtime computation.
+
 
 \subsection{Multiplicities}
 \label{sec:multiplicities}
@@ -340,7 +347,7 @@ fileProg : IO ()
 fileProg
     = newFile $ \f =>
           let f' = openFile f
-              f'' = closeDoor f' in
+              f'' = closeFile f' in
               openFile f''
 \end{idris}
 This will result in a type error, as the linear type system detects that \texttt{f''} was not used exactly once.
@@ -359,7 +366,7 @@ In Idris2, dependent type parameters like \texttt{n} in \texttt{Vec n a} have a 
 
 \begin{idris}
 length1 : Vec n a -> Nat
-length1 xs = n
+length1 xs = ?goal 
 \end{idris}
 
 The context for the above function would be:
@@ -599,14 +606,14 @@ prf : [y] = [x]
 goal : intToBool (prim__eq_Char y x) = True
 \end{idris}
 
-Idris2 can reach propositional equality (\texttt{x = y}) from the equality of singelton lists but not the boolean equality (\texttt{==}).
+Idris2 can reach propositional equality (\texttt{x = y}) from the equality of singleton lists but not the boolean equality (\texttt{==}).
 Using the \texttt{believe\_me} function we can prove (\texttt{x == y = True}). As noted in the Idris2 documentation, \texttt{believe\_me} is an unsafe cast that allows users to bypass the typechecker when they know something to be true even though it cannot be proven \cite{idris2-believeme}. It should only be used when we have a proof that Idris2 cannot find.
 
 \begin{idris}
-singeltonEq : {x, y : Char} -> Prelude.Basics.(::) x [] = y :: [] -> x == y = True
-singeltonEq Refl = believe_me Refl 
+singletonEq : {x, y : Char} -> Prelude.Basics.(::) x [] = y :: [] -> x == y = True
+singletonEq Refl = believe_me Refl 
 
-matchCompleteness (Chr x) ([y]) prf = rewrite singeltonEq prf in Refl
+matchCompleteness (Chr x) ([y]) prf = rewrite singletonEq prf in Refl
 \end{idris}
 
 For the \texttt{Alt} case, we can split the proof into two cases (since disjunction has two constructors) and prove each case separately. In both cases, we use the recursive call to prove the goal; however, for the Right case, we need to use the \texttt{orTrueTrue} lemma to complete the proof:
@@ -663,12 +670,13 @@ splitsMatch: {s : List (List Char , List Char)} -> Elem (s1, s2) s ->
 By rewriting the goal using these lemmas, we can prove the goal:
 
 \begin{idris}
-matchCompleteness (Concat x y) s (((z, w) ** (v, (t, u)))) = 
-    let rec1 = matchCompleteness x z t
-        rec2 = matchCompleteness y w u 
-        temp = trans (cong (&& (match y w)) rec1) rec2
-        lem = sym (splitsMatch (splitElem z w v) temp) in rewrite lem 
+matchCompletness (Concat x y) s (((pre, suf) ** (v, (t, u)))) =
+let rec1 = matchCompletness x pre t
+    rec2 = matchCompletness y suf u
+    temp = trans (cong (&& (match y suf)) rec1 ) rec2
+    lem = sym (splitsMatch (splitElem pre suf v) temp) in rewrite lem
     in Refl
+  
 \end{idris}
 
 For the \texttt{Star} case, we prove it as follows:
